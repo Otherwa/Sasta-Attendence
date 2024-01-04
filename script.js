@@ -8,7 +8,7 @@ const tableBody = document.getElementById("attendanceTableBody");
 let isAttendanceStarted = false;
 
 // Const Buffer
-let attendanceToday = new Set();
+const attendanceToday = new Set();
 
 startBtn.addEventListener("click", () => {
   isAttendanceStarted = true;
