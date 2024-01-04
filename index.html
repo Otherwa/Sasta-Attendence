@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Attendence</title>
+  <script defer src="face-api.min.js"></script>
+  <script defer src="script.js"></script>
+  <style>
+    #video-frame {
+      margin: 0;
+      padding: 0;
+      width: 99%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 0.25rem;
+    }
+
+    canvas {
+      position: absolute;
+    }
+
+    .constainer {
+      display: grid;
+      grid-template-columns: 50% 50%;
+      grid-template-areas: "video attend";
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="constainer">
+
+    <div id="video-frame" class="video">
+      <video id="video" width="720" height="560" autoplay muted></video>
+    </div>
+
+    <!-- attendance -->
+    <div class="attend">
+      <div>
+        <button id="startAttendanceBtn">Start Attendance</button>
+        <button id="stopAttendanceBtn">Stop Attendance</button>
+        <button id="saveAttendanceBtn">Save Attendance</button>
+      </div>
+      <div>
+        <table id="attendanceTable">
+          <thead>
+            <tr>
+              <th>Entry</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTableBody">
+            <!-- Entries will be dynamically added here -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</body>
+
+</html>
