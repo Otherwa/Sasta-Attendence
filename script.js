@@ -5,7 +5,7 @@ const saveBtn = document.getElementById("saveAttendanceBtn");
 
 const tableBody = document.getElementById("attendanceTableBody");
 
-let isAttendanceStarted = false;
+var isAttendanceStarted = false;
 
 // Const Buffer
 const attendanceToday = new Set();
@@ -128,21 +128,19 @@ video.addEventListener("play", async () => {
   const canvas = faceapi.createCanvasFromMedia(video);
   document.getElementById('video-frame').append(canvas);
 
-  let lastFrameTime = 0;
 
   function animate() {
     const currentTime = Date.now();
-    const deltaTime = currentTime - lastFrameTime;
 
     // Update the table
     if (isAttendanceStarted) {
+      detectFaces(); // ? Perform face detection
       updateAttendanceTable();
     }
 
-    detectFaces(); // Perform face detection
 
     lastFrameTime = currentTime;
-    requestAnimationFrame(animate); // Request the next animation frame
+    requestAnimationFrame(animate); // ! animation frame
   }
 
   function detectFaces() {
