@@ -95,7 +95,7 @@ async function getLabeledFaceDescriptions() {
     return Promise.all(
       labels.map(async (label) => {
         const descriptions = [];
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 1; i++) {
           const img = await faceapi.fetchImage(`./peeps/${label}/${i}.jpg`);
           try {
             const detection = await faceapi
