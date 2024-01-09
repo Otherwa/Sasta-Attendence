@@ -1,7 +1,8 @@
 # Prototype 
 ![image](https://github.com/Otherwa/Sasta-Attendence/assets/67428572/409f2393-5b29-4134-831b-9f021a26ddae)
 
-
+# Major Dependency
+[https://github.com/justadudewhohacks/face-api.js](https://github.com/justadudewhohacks/face-api.js)
 
 # IMPORTANT: Bug Fixes
 
