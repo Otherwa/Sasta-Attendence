@@ -6,19 +6,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Attendence</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <script defer src="./public/js/face-api.min.js"></script>
   <script defer src="script.js"></script>
   <style>
     #video-frame {
-      margin: 0;
-      padding: 0;
       width: 99%;
       height: 100vh;
-      display: flex;
-      flex-direction: column;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      display: grid;
+      grid-template-areas: video-frame option;
       justify-content: center;
       align-items: center;
-      border-radius: 0.25rem;
     }
 
     canvas {
@@ -35,21 +35,26 @@
 
 <body>
 
-  <div class="constainer">
+  <div class="constainer p-4 ">
 
     <div id="video-frame" class="video">
       <video id="video" width="720" height="560" autoplay muted></video>
     </div>
 
     <!-- attendance -->
-    <div class="attend">
-      <div>
-        <button id="startAttendanceBtn">Start Attendance</button>
-        <button id="stopAttendanceBtn">Stop Attendance</button>
-        <button id="saveAttendanceBtn">Save Attendance</button>
+    <div id="option" class="attend">
+      <div class="p-2">
+        <span id="Status">InActive</span>
+        <span id="Count"></span>
+      </div>
+      <br>
+      <div class="p-2">
+        <button class="button is-success" id="startAttendanceBtn">Start Attendance</button>
+        <button class="button is-warning" id="stopAttendanceBtn">Stop Attendance</button>
+        <button class="button is-info" id="saveAttendanceBtn">Save Attendance</button>
       </div>
       <div>
-        <table id="attendanceTable">
+        <table class="table" id="attendanceTable">
           <thead>
             <tr>
               <th>Entry</th>
