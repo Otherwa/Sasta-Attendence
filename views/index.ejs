@@ -6,31 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Attendence</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <script defer src="/js/face-api.min.js"></script>
-  <script defer src="/js/script.js"></script>
-  <style>
-    #video-frame {
-      width: 99%;
-      height: 100vh;
-      padding: 0.5rem;
-      border-radius: 0.25rem;
-      display: grid;
-      grid-template-areas: video-frame option;
-      justify-content: center;
-      align-items: center;
-    }
-
-    canvas {
-      position: absolute;
-    }
-
-    .constainer {
-      display: grid;
-      grid-template-columns: 50% 50%;
-      grid-template-areas: "video attend";
-    }
-  </style>
+  <link type="text/css" rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
@@ -69,6 +45,9 @@
 
     </div>
   </div>
+  <!-- <script type="module" src="/js/modules/faceRecognitionModule.js"></script> -->
+  <script type="module" src="/js/face-api.min.js"></script>
+  <script type="module" src="/js/script.js"></script>
 </body>
 
 </html>

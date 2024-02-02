@@ -1,0 +1,30 @@
+body {
+  padding: 1.1rem;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+#video-frame {
+  width: 99%;
+  height: 100vh;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  display: grid;
+  grid-template-areas: video-frame option;
+  justify-content: center;
+  align-items: center;
+}
+
+canvas {
+  position: absolute;
+}
+
+.constainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "video attend";
+  gap: 0.9rem;
+}
