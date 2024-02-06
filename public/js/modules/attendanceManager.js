@@ -188,6 +188,8 @@ class FaceRecognition {
     async detectFaces() {
         try {
 
+            // ! REFERENCE : https://github.com/WebDevSimplified/Face-Detection-JavaScript/blob/master/script.js
+
             // ? from video get detections
             const detections = await faceapi.detectAllFaces(this.video)
                 .withFaceLandmarks()
