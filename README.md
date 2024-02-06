@@ -1,11 +1,11 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/otherwa/sasta-attendence/badge)](https://www.codefactor.io/repository/github/otherwa/sasta-attendence)
+[![DeepSource](https://app.deepsource.com/gh/Otherwa/Sasta-Attendence.svg/?label=code+coverage&show_trend=true&token=JS8-u3rZnXk42g9Oo5MzWKl8)](https://app.deepsource.com/gh/Otherwa/Sasta-Attendence/)
 
 # Prototype 
 ![image](https://github.com/Otherwa/Sasta-Attendence/assets/67428572/409f2393-5b29-4134-831b-9f021a26ddae)
 
 # Major Dependency
 [https://github.com/justadudewhohacks/face-api.js](https://github.com/justadudewhohacks/face-api.js)
-[![DeepSource](https://app.deepsource.com/gh/Otherwa/Sasta-Attendence.svg/?label=code+coverage&show_trend=true&token=JS8-u3rZnXk42g9Oo5MzWKl8)](https://app.deepsource.com/gh/Otherwa/Sasta-Attendence/)
 # IMPORTANT: Bug Fixes
 
 ## `navigator.mediaDevices.getUserMedia`
