@@ -187,6 +187,8 @@ class FaceRecognition {
 
     async detectFaces() {
         try {
+
+            // ? from video get detections
             const detections = await faceapi.detectAllFaces(this.video)
                 .withFaceLandmarks()
                 .withFaceDescriptors()
@@ -199,43 +201,49 @@ class FaceRecognition {
 
             this.canvas.getContext("2d").clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            const results = resizedDetections.map((d) => {
-                if (d.descriptor) {
-                    const match = this.faceMatcher.findBestMatch(d.descriptor);
+            resizedDetections.forEach((detection) => {
+                const box = detection.detection.box;
 
-                    // Check if match is not undefined and has a valid label
-                    if (match && match.label && match.label !== "unknown") {
-                        const entry = {
-                            label: match.label,
-                            timestamp: new Date().toISOString(),
-                            present: true,
-                        };
+                const match = this.faceMatcher.findBestMatch(detection.descriptor);
+                const label = match && match.label !== "unknown" ? match.toString() : "unknown";
 
-                        const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
-                        if (!existingEntry && isAttendanceStarted) {
-                            this.attendanceToday.add(entry);
-                            let totalCount = this.attendanceToday.size;
-                            this.count.innerText = "Detected: " + totalCount;
-                        }
-                    }
-                    return { match, detection: d.detection };
-                }
-                return null;
-            }).filter(result => result !== null);
-
-            results.forEach((result) => {
-                const { match, detection } = result;
-                const box = detection.box;
-
-                const drawBox = new faceapi.draw.DrawBox(box, {
-                    label: match ? match.toString() : "unknown",
-                });
-
+                const drawBox = new faceapi.draw.DrawBox(box, { label });
                 drawBox.draw(this.canvas);
+
+
+                // ? Inbuit Expression and Landmark shard model weights
+
+                // Draw expressions
+                // faceapi.draw.drawFaceExpressions(this.canvas, [detection]);
+
+                // Draw landmarks
+                // faceapi.draw.drawFaceLandmarks(this.canvas, [detection.landmarks]);
+
+                const entry = {
+                    label: match.label,
+                    timestamp: new Date().toISOString(),
+                    present: true,
+                };
+
+                // ? check if exisit
+                const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
+
+                if (!existingEntry && isAttendanceStarted && entry.label !== "unknown") {
+                    this.attendanceToday.add(entry);
+                    let totalCount = this.attendanceToday.size;
+                    this.count.innerText = "Detected: " + totalCount;
+                }
+
             });
+
+            // Update attendance table if needed
+            if (isAttendanceStarted) {
+                this.updateAttendanceTable();
+            }
         } catch (error) {
             console.error("Error during face detection:", error);
         }
     }
+
 
 }
