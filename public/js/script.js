@@ -10,4 +10,4 @@ const stat = document.getElementById("Status");
 const count = document.getElementById("Count");
 
 // ? Initialize AttendanceManager
-const AttendanceManager = new AttendanceManager(videoElement, startBtn, stopBtn, saveBtn, tableBody, stat, count);
+const myAttendanceManager = new AttendanceManager(videoElement, startBtn, stopBtn, saveBtn, tableBody, stat, count);
