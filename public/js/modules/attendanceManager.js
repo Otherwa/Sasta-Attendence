@@ -3,6 +3,20 @@
 let isAttendanceStarted = false;
 
 export default class AttendanceManager {
+    /**
+   * AttendanceManager class manages the attendance system for a video stream with face recognition.
+   * It provides functionality to start, stop, and save attendance, as well as update the attendance table.
+   * 
+   * @param {HTMLElement} videoElement - The HTML video element where the video stream is displayed.
+   * @param {HTMLElement} startBtn - The button element used to start attendance tracking.
+   * @param {HTMLElement} stopBtn - The button element used to stop attendance tracking.
+   * @param {HTMLElement} saveBtn - The button element used to save attendance to a file.
+   * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
+   * @param {HTMLElement} status - The element displaying the current status of attendance (e.g., Active/Inactive).
+   * @param {number} count - The count of attendees for the current session.
+   */
+
+
     constructor(videoElement, startBtn, stopBtn, saveBtn, tableBody, status, count) {
         this.video = videoElement;
         this.startBtn = startBtn;
@@ -43,6 +57,17 @@ export default class AttendanceManager {
 }
 
 class FaceRecognition {
+
+    /**
+     * FaceRecognition class handles face detection and attendance management based on the provided video stream.
+     * 
+     * @param {HTMLElement} video - The HTML video element where the video stream is displayed.
+     * @param {Set} attendanceToday - The set containing the attendance records for the current session.
+     * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
+     * @param {number} count - The count of attendees for the current session.
+     */
+
+
     constructor(video, attendanceToday, tableBody, count) {
         this.video = video;
         this.attendanceToday = attendanceToday;
@@ -58,12 +83,18 @@ class FaceRecognition {
         this.animate();
     }
 
+    /**
+     * * Creates a canvas element from the provided video stream and appends it to the document.
+     */
     createCanvasFromMedia = () => {
         this.canvas = faceapi.createCanvasFromMedia(this.video);
         document.getElementById('video-frame').append(this.canvas);
         faceapi.matchDimensions(this.canvas, { width: this.video.width, height: this.video.height });
     }
 
+    /**
+    * * Initializes the webcam and starts streaming video to the provided video element.
+    */
     startWebcam = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -73,6 +104,9 @@ class FaceRecognition {
         }
     }
 
+    /**
+    * * Initializes the FaceAPI models required for face recognition.
+    */
     async initializeFaceAPI() {
         try {
             await Promise.all([
@@ -92,6 +126,12 @@ class FaceRecognition {
         }
     }
 
+
+    /**
+    * * Retrieves labeled face descriptors from the provided manifest file.
+    * * @returns {Promise<faceapi.LabeledFaceDescriptors[]>} A promise that resolves to an array of labeled face descriptors.
+    */
+
     async getLabeledFaceDescriptions() {
         try {
             const response = await fetch("./peeps/manifest.json");
@@ -109,6 +149,12 @@ class FaceRecognition {
             return [];
         }
     }
+
+    /**
+    * * Retrieves face descriptors for a given label from the provided image files.
+    * * @param {string} label - The label corresponding to the person's face.
+    * * @returns {Promise<faceapi.Descriptor[]>} A promise that resolves to an array of face descriptors.
+    */
 
     async getFaceDescriptors(label) {
         const descriptions = [];
@@ -131,6 +177,9 @@ class FaceRecognition {
         return descriptions;
     }
 
+    /**
+    * * Saves the attendance records to a JSON file.
+    */
     saveAttendanceToFile = () => {
         const attendanceArray = Array.from(this.attendanceToday);
         const blob = new Blob([JSON.stringify(attendanceArray, null, 2)], { type: "application/json" });
@@ -143,6 +192,10 @@ class FaceRecognition {
         console.log("Attendance saved to JSON file:", attendanceArray);
     }
 
+
+    /**
+    * *  Updates the attendance table with the current attendance records.
+    */
     updateAttendanceTable = () => {
         this.tableBody.innerHTML = "";
 
@@ -169,6 +222,9 @@ class FaceRecognition {
         });
     }
 
+    /**
+    * * Animates the face detection process by continuously detecting faces in the video stream.
+    */
     animate = () => {
         const currentTime = Date.now();
 
@@ -185,8 +241,13 @@ class FaceRecognition {
         requestAnimationFrame(() => this.animate());
     }
 
+    /**
+    * * Detects faces in the video stream and updates the attendance records accordingly.
+    */
     async detectFaces() {
         try {
+
+            // ! REFERENCE : https://github.com/WebDevSimplified/Face-Detection-JavaScript/blob/master/script.js
 
             // ? from video get detections
             const detections = await faceapi.detectAllFaces(this.video)
