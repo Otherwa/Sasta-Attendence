@@ -146,7 +146,7 @@ class FaceRecognition {
     updateAttendanceTable = () => {
         this.tableBody.innerHTML = "";
 
-        Array.from(this.attendanceToday).forEach((entry, index) => {
+        Array.from(this.attendanceToday).forEach((entry) => {
             const row = document.createElement("tr");
             const entryCell = document.createElement("td");
             entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp}`;
