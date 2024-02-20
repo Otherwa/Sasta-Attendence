@@ -141,7 +141,7 @@ class FaceRecognition {
             return Promise.all(
                 labels.map(async (label) => {
                     const descriptions = await this.getFaceDescriptors(label);
-                    return new faceapi.LabeledFaceDescriptors(label, descriptions);
+                    return new faceapi.LabeledFaceDescriptors(label[0], descriptions);
                 })
             );
         } catch (error) {
@@ -156,26 +156,35 @@ class FaceRecognition {
     * * @returns {Promise<faceapi.Descriptor[]>} A promise that resolves to an array of face descriptors.
     */
 
-    async getFaceDescriptors(label) {
+    async getFaceDescriptors(labels) {
         const descriptions = [];
-        for (let i = 1; i <= 1; i++) {
-            const img = await faceapi.fetchImage(`./peeps/${label}/${i}.jpg`);
-            try {
-                const detection = await faceapi
-                    .detectSingleFace(img)
-                    .withFaceLandmarks()
-                    .withFaceDescriptor()
-                    .withFaceExpressions();
+        console.warn(labels);
+        try {
+            // * enum number of images
+            for (let i = 1; i <= labels.length; i++) {
+                const img = await faceapi.fetchImage(`./peeps/${labels[0]}/${labels[1]}.jpg`);
 
-                if (detection) {
-                    descriptions.push(detection.descriptor);
+                try {
+                    const detection = await faceapi
+                        .detectSingleFace(img)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor()
+                        .withFaceExpressions();
+
+                    if (detection) {
+                        descriptions.push(detection.descriptor);
+                    }
+                } catch (error) {
+                    console.error(`Error detecting face for ${label} (${i}.jpg):`, error);
                 }
-            } catch (error) {
-                console.error(`Error detecting face for ${label} (${i}.jpg):`, error);
+
             }
+        } catch (error) {
+            console.error('Error iterating over labels:', error);
         }
         return descriptions;
     }
+
 
     /**
     * * Saves the attendance records to a JSON file.

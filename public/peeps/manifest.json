@@ -1,17 +1,18 @@
 {
   "labels": [
-    "Atharv Desai",
-    "Pratham Kandalgaonkar",
-    "Swaraj Madhvi",
-    "Prof. Sudarshan Sirsat",
-    "Aditya Kundar",
-    "Rohan Kadam",
-    "Swaminathan Iyer",
-    "Atharva Aspathamb",
-    "Sharvil Jadhav",
-    "Jason Dsa",
-    "Shubhvrat Kulkarni",
-    "Shivangi Shukla",
-    "Avinash Banyal"
+    ["Atharv Desai",2],
+    ["Pratham Kandalgaonkar",1],
+    ["Swaraj Madhvi",1],
+    ["Prof. Sudarshan Sirsat",1],
+    ["Aditya Kundar",1],
+    ["Rohan Kadam",1],
+    ["Swaminathan Iyer",1],
+    ["Atharva Aspathamb",1],
+    ["Sharvil Jadhav",1],
+    ["Jason Dsa",1],
+    ["Shubhvrat Kulkarni",1],
+    ["Shivangi Shukla",1],
+    ["Avinash Banyal",1],
+    ["Prof Sangeetha Rajesh",1]
   ]
 }
