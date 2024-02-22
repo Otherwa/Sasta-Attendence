@@ -18,6 +18,27 @@ a {
   align-items: center;
 }
 
+.progress-container {
+  width: 100%;
+  background-color: #f3f3f3;
+}
+
+.progress-bar {
+  width: 0%;
+  height: 30px;
+  background-color: #4caf50;
+  text-align: center;
+  line-height: 30px;
+  color: white;
+  transition: width 1s ease;
+  /* Smooth transition animation */
+}
+
+#video-frame>#video {
+  border-radius: 0.25rem;
+  border: 2px solid black;
+}
+
 canvas {
   position: absolute;
 }
@@ -27,4 +48,12 @@ canvas {
   grid-template-columns: 1fr 1fr;
   grid-template-areas: "video attend";
   gap: 0.9rem;
+}
+
+#popup {
+  text-decoration: solid;
+  font-style: italic;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: orange;
 }
