@@ -56,6 +56,11 @@ export default class AttendanceManager {
     }
 }
 
+// Display the progress bar initially
+const progressBar = document.getElementById("myProgressBar");
+progressBar.style.width = "0%";
+progressBar.style.transition = "width 1s ease"; // Smooth transition animation
+
 class FaceRecognition {
 
     /**
@@ -81,9 +86,18 @@ class FaceRecognition {
 
     async initialize() {
         await this.startWebcam();
+        progressBar.style.width = "25%";
         await this.initializeFaceAPI();
+        progressBar.style.width = "50%";
         this.createCanvasFromMedia();
+        progressBar.style.width = "75%";
         await this.animate();
+        progressBar.style.width = "100%";
+        await this.Running();
+    }
+
+    async Running() {
+        window.alert("Face-Api Up and Running");
     }
 
     /**
@@ -112,6 +126,8 @@ class FaceRecognition {
     */
     async initializeFaceAPI() {
         try {
+
+
             await Promise.all([
                 faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
                 faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
@@ -120,10 +136,9 @@ class FaceRecognition {
             ]);
 
             const labeledFaceDescriptors = await this.getLabeledFaceDescriptions();
-            this.faceMatcher = await new faceapi.FaceMatcher(labeledFaceDescriptors);
+            this.faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors);
 
-            this.createCanvasFromMedia();
-            window.alert("Face-Api Up and Running");
+
         } catch (error) {
             console.error("Error loading faceapi models:", error);
         }
