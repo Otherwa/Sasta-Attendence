@@ -38,7 +38,7 @@ export default class AttendanceManager {
         this.status.innerText = "Active";
         isAttendanceStarted = true;
         this.attendanceToday.clear();
-        await this.faceRecognition.detectFaces();
+        // await this.faceRecognition.detectFaces();
     }
 
     stopAttendance = () => {
@@ -74,19 +74,22 @@ class FaceRecognition {
         this.tableBody = tableBody;
         this.lastTableUpdateTime = 0;
         this.count = count;
-
-        this.startWebcam();
-        this.initializeFaceAPI();
         this.faceMatcher = null;
-
         this.lastFrameTime = 0;
-        this.animate();
+        this.initialize();
+    }
+
+    async initialize() {
+        await this.startWebcam();
+        await this.initializeFaceAPI();
+        this.createCanvasFromMedia();
+        await this.animate();
     }
 
     /**
      * * Creates a canvas element from the provided video stream and appends it to the document.
      */
-    createCanvasFromMedia = () => {
+    createCanvasFromMedia = async () => {
         this.canvas = faceapi.createCanvasFromMedia(this.video);
         document.getElementById('video-frame').append(this.canvas);
         faceapi.matchDimensions(this.canvas, { width: this.video.width, height: this.video.height });
@@ -117,7 +120,7 @@ class FaceRecognition {
             ]);
 
             const labeledFaceDescriptors = await this.getLabeledFaceDescriptions();
-            this.faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors);
+            this.faceMatcher = await new faceapi.FaceMatcher(labeledFaceDescriptors);
 
             this.createCanvasFromMedia();
             window.alert("Face-Api Up and Running");
@@ -234,7 +237,7 @@ class FaceRecognition {
     /**
     * * Animates the face detection process by continuously detecting faces in the video stream.
     */
-    animate = () => {
+    animate = async () => {
         const currentTime = Date.now();
 
         if (isAttendanceStarted) {
@@ -244,10 +247,10 @@ class FaceRecognition {
             }
         }
 
-        this.detectFaces();
+        await this.detectFaces(); // Wait for detectFaces to complete before continuing
 
         this.lastFrameTime = currentTime;
-        requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(async () => await this.animate());
     }
 
     /**
@@ -255,14 +258,12 @@ class FaceRecognition {
     */
     async detectFaces() {
         try {
-
-            // ! REFERENCE : https://github.com/WebDevSimplified/Face-Detection-JavaScript/blob/master/script.js
-
-            // ? from video get detections
             const detections = await faceapi.detectAllFaces(this.video)
                 .withFaceLandmarks()
                 .withFaceDescriptors()
                 .withFaceExpressions();
+
+            console.info(detections);
 
             const displaySize = { width: this.video.width, height: this.video.height };
             faceapi.matchDimensions(this.canvas, displaySize);
@@ -280,22 +281,12 @@ class FaceRecognition {
                 const drawBox = new faceapi.draw.DrawBox(box, { label });
                 drawBox.draw(this.canvas);
 
-
-                // ? Inbuit Expression and Landmark shard model weights
-
-                // Draw expressions
-                // faceapi.draw.drawFaceExpressions(this.canvas, [detection]);
-
-                // Draw landmarks
-                // faceapi.draw.drawFaceLandmarks(this.canvas, [detection.landmarks]);
-
                 const entry = {
                     label: match.label,
                     timestamp: new Date().toISOString(),
                     present: true,
                 };
 
-                // ? check if exisit
                 const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
 
                 if (!existingEntry && isAttendanceStarted && entry.label !== "unknown") {
@@ -303,7 +294,6 @@ class FaceRecognition {
                     let totalCount = this.attendanceToday.size;
                     this.count.innerText = "Detected: " + totalCount;
                 }
-
             });
 
             // Update attendance table if needed
@@ -311,7 +301,7 @@ class FaceRecognition {
                 this.updateAttendanceTable();
             }
         } catch (error) {
-            console.error("Error during face detection:", error);
+            console.warn("Error during face detection:", error);
         }
     }
 
