@@ -152,21 +152,51 @@ class FaceRecognition {
 
     async getLabeledFaceDescriptions() {
         try {
-            const response = await fetch("./peeps/manifest.json");
-            const data = await response.json();
-            const labels = data.labels || [];
+            let labeledFaceDescriptorsFromLocalStorage = localStorage.getItem('labeledFaceDescriptors');
+    
+            if (labeledFaceDescriptorsFromLocalStorage) {
+                // Deserialize the data from localStorage
+                const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
+                
+                // Convert each index value to LabeledFaceDescriptors object
+                const labeledFaceDescriptors = parsedData.map(item => {
+                    // ? Caching
+                    const descriptors = item._descriptors.map(descriptor => {
+                        const values = Object.values(descriptor);
+                        return new Float32Array(values);
+                    });
+                    return new faceapi.LabeledFaceDescriptors(item._label, descriptors);
+                });
 
-            return Promise.all(
-                labels.map(async (label) => {
-                    const descriptions = await this.getFaceDescriptors(label);
-                    return new faceapi.LabeledFaceDescriptors(label[0], descriptions);
-                })
-            );
+                console.log(labeledFaceDescriptors);
+                
+                return labeledFaceDescriptors;
+            } else {
+                const response = await fetch("./peeps/manifest.json");
+                const data = await response.json();
+                const labels = data.labels || [];
+    
+                const labeledFaceDescriptors = await Promise.all(
+                    labels.map(async (label) => {
+                        const descriptions = await this.getFaceDescriptors(label);
+                        return new faceapi.LabeledFaceDescriptors(label[0], descriptions);
+                    })
+                );
+    
+                // Serialize and save the data to localStorage
+                const serializedData = JSON.stringify(labeledFaceDescriptors);
+                localStorage.setItem('labeledFaceDescriptors', serializedData);
+    
+                console.log(labeledFaceDescriptors);
+                return labeledFaceDescriptors;
+            }
         } catch (error) {
             console.error("Error fetching or parsing manifest.json:", error);
             return [];
         }
     }
+    
+
 
     /**
     * * Retrieves face descriptors for a given label from the provided image files.
