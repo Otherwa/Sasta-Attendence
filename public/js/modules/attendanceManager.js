@@ -2,64 +2,10 @@
 // ! Original (O.G) File
 let isAttendanceStarted = false;
 
-export default class AttendanceManager {
-    /**
-   * AttendanceManager class manages the attendance system for a video stream with face recognition.
-   * It provides functionality to start, stop, and save attendance, as well as update the attendance table.
-   * 
-   * @param {HTMLElement} videoElement - The HTML video element where the video stream is displayed.
-   * @param {HTMLElement} startBtn - The button element used to start attendance tracking.
-   * @param {HTMLElement} stopBtn - The button element used to stop attendance tracking.
-   * @param {HTMLElement} saveBtn - The button element used to save attendance to a file.
-   * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
-   * @param {HTMLElement} status - The element displaying the current status of attendance (e.g., Active/Inactive).
-   * @param {number} count - The count of attendees for the current session.
-   */
-
-
-    constructor(videoElement, startBtn, stopBtn, saveBtn, tableBody, status, count) {
-        this.video = videoElement;
-        this.startBtn = startBtn;
-        this.stopBtn = stopBtn;
-        this.saveBtn = saveBtn;
-        this.tableBody = tableBody;
-        this.status = status;
-        this.count = count;
-        this.attendanceToday = new Set();
-
-        this.startBtn.addEventListener("click", () => this.startAttendance());
-        this.stopBtn.addEventListener("click", () => this.stopAttendance());
-        this.saveBtn.addEventListener("click", () => this.saveAttendanceToFile());
-
-        this.faceRecognition = new FaceRecognition(this.video, this.attendanceToday, this.tableBody, this.count);
-    }
-
-    startAttendance = async () => {
-        this.status.innerText = "Active";
-        isAttendanceStarted = true;
-        this.attendanceToday.clear();
-        // await this.faceRecognition.detectFaces();
-    }
-
-    stopAttendance = () => {
-        this.status.innerText = "Inactive";
-        isAttendanceStarted = false;
-        this.updateAttendanceTable();
-    }
-
-    saveAttendanceToFile = () => {
-        this.faceRecognition.saveAttendanceToFile();
-    }
-
-    updateAttendanceTable() {
-        this.faceRecognition.updateAttendanceTable();
-    }
-}
-
 // Display the progress bar initially
 const progressBar = document.getElementById("myProgressBar");
 progressBar.style.width = "0%";
-progressBar.style.transition = "width 1s ease"; // Smooth transition animation
+progressBar.style.transition = "width 1s ease";
 
 class FaceRecognition {
 
@@ -153,11 +99,11 @@ class FaceRecognition {
     async getLabeledFaceDescriptions() {
         try {
             let labeledFaceDescriptorsFromLocalStorage = localStorage.getItem('labeledFaceDescriptors');
-    
+
             if (labeledFaceDescriptorsFromLocalStorage) {
                 // Deserialize the data from localStorage
                 const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
-                
+
                 // Convert each index value to LabeledFaceDescriptors object
                 const labeledFaceDescriptors = parsedData.map(item => {
                     // ? Caching
@@ -169,24 +115,24 @@ class FaceRecognition {
                 });
 
                 console.log(labeledFaceDescriptors);
-                
+
                 return labeledFaceDescriptors;
             } else {
                 const response = await fetch("./peeps/manifest.json");
                 const data = await response.json();
                 const labels = data.labels || [];
-    
+
                 const labeledFaceDescriptors = await Promise.all(
                     labels.map(async (label) => {
                         const descriptions = await this.getFaceDescriptors(label);
                         return new faceapi.LabeledFaceDescriptors(label[0], descriptions);
                     })
                 );
-    
+
                 // Serialize and save the data to localStorage
                 const serializedData = JSON.stringify(labeledFaceDescriptors);
                 localStorage.setItem('labeledFaceDescriptors', serializedData);
-    
+
                 console.log(labeledFaceDescriptors);
                 return labeledFaceDescriptors;
             }
@@ -195,7 +141,7 @@ class FaceRecognition {
             return [];
         }
     }
-    
+
 
 
     /**
@@ -326,6 +272,13 @@ class FaceRecognition {
                 const drawBox = new faceapi.draw.DrawBox(box, { label });
                 drawBox.draw(this.canvas);
 
+                // ? Inbuit Expression and Landmark shard model weights
+
+                faceapi.draw.drawFaceExpressions(this.canvas, [detection]);
+
+                faceapi.draw.drawFaceLandmarks(this.canvas, [detection.landmarks]);
+
+
                 const entry = {
                     label: match.label,
                     timestamp: new Date().toISOString(),
@@ -352,3 +305,60 @@ class FaceRecognition {
 
 
 }
+
+
+export default class AttendanceManager {
+    /**
+   * AttendanceManager class manages the attendance system for a video stream with face recognition.
+   * It provides functionality to start, stop, and save attendance, as well as update the attendance table.
+   * 
+   * @param {HTMLElement} videoElement - The HTML video element where the video stream is displayed.
+   * @param {HTMLElement} startBtn - The button element used to start attendance tracking.
+   * @param {HTMLElement} stopBtn - The button element used to stop attendance tracking.
+   * @param {HTMLElement} saveBtn - The button element used to save attendance to a file.
+   * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
+   * @param {HTMLElement} status - The element displaying the current status of attendance (e.g., Active/Inactive).
+   * @param {number} count - The count of attendees for the current session.
+   */
+
+
+    constructor(videoElement, startBtn, stopBtn, saveBtn, tableBody, status, count) {
+        this.video = videoElement;
+        this.startBtn = startBtn;
+        this.stopBtn = stopBtn;
+        this.saveBtn = saveBtn;
+        this.tableBody = tableBody;
+        this.status = status;
+        this.count = count;
+        this.attendanceToday = new Set();
+
+        this.startBtn.addEventListener("click", () => this.startAttendance());
+        this.stopBtn.addEventListener("click", () => this.stopAttendance());
+        this.saveBtn.addEventListener("click", () => this.saveAttendanceToFile());
+
+        this.faceRecognition = new FaceRecognition(this.video, this.attendanceToday, this.tableBody, this.count);
+    }
+
+    startAttendance = async () => {
+        this.status.innerText = "Active";
+        isAttendanceStarted = true;
+        this.attendanceToday.clear();
+        // await this.faceRecognition.detectFaces();
+    }
+
+    stopAttendance = () => {
+        this.status.innerText = "Inactive";
+        isAttendanceStarted = false;
+        this.updateAttendanceTable();
+    }
+
+    saveAttendanceToFile = () => {
+        this.faceRecognition.saveAttendanceToFile();
+    }
+
+    updateAttendanceTable() {
+        this.faceRecognition.updateAttendanceTable();
+    }
+}
+
+
