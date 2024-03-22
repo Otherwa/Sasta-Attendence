@@ -200,7 +200,7 @@ class FaceRecognition {
     * * Saves the attendance records to a JSON file.
     */
     saveAttendanceToFile = () => {
-        // const attendanceArray = Array.from(this.attendanceToday);
+        const attendanceArray = Array.from(this.attendanceToday);
         // const blob = new Blob([JSON.stringify(attendanceArray, null, 2)], { type: "application/json" });
         // const link = document.createElement("a");
 
