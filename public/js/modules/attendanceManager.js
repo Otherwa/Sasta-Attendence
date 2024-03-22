@@ -180,19 +180,37 @@ class FaceRecognition {
     }
 
 
+    postData = (url, data) => {
+        // Default options are marked with *
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: JSON.stringify({
+                key: "tatakae",
+                data: data
+            }) // body data type must match "Content-Type" header
+        })
+            .then(response => response.json()); // parses JSON response into native JavaScript objects
+    }
+
     /**
     * * Saves the attendance records to a JSON file.
     */
     saveAttendanceToFile = () => {
-        const attendanceArray = Array.from(this.attendanceToday);
-        const blob = new Blob([JSON.stringify(attendanceArray, null, 2)], { type: "application/json" });
-        const link = document.createElement("a");
+        // const attendanceArray = Array.from(this.attendanceToday);
+        // const blob = new Blob([JSON.stringify(attendanceArray, null, 2)], { type: "application/json" });
+        // const link = document.createElement("a");
 
-        link.href = URL.createObjectURL(blob);
-        link.download = "attendance.json";
-        link.click();
+        // link.href = URL.createObjectURL(blob);
+        // link.download = "attendance.json";
+        // link.click();
 
-        console.log("Attendance saved to JSON file:", attendanceArray);
+        // ! Fix this genralized
+        this.postData("https://crowded-ant-tuxedo.cyclic.app/create-spreadsheet", attendanceArray)
+        alert("Attendance saved to JSON file:", attendanceArray);
     }
 
 
