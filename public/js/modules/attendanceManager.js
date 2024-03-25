@@ -180,37 +180,56 @@ class FaceRecognition {
     }
 
 
-    postData = (url, data) => {
-        // Default options are marked with *
-        return fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: JSON.stringify({
-                key: "tatakae",
-                data: data
-            }) // body data type must match "Content-Type" header
-        })
-            .then(response => response.json()); // parses JSON response into native JavaScript objects
-    }
 
     /**
     * * Saves the attendance records to a JSON file.
     */
-    saveAttendanceToFile = () => {
+    saveAttendance = () => {
+
+        // * get session name 
+        const sessionname = document.getElementById("sessionname");
+        let sessName = sessionname.value
+
+        async function postData(url, data) {
+            // Default options are marked with *
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    key: "tatakae",
+                    name: sessName,
+                    students: data
+                })
+            });
+            return await response.json();
+        }
+
+        // *function to get cookies
+        function getCookie(cname) {
+            let name = cname + "=";
+            let ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+
         const attendanceArray = Array.from(this.attendanceToday);
-        // const blob = new Blob([JSON.stringify(attendanceArray, null, 2)], { type: "application/json" });
-        // const link = document.createElement("a");
+        const URL = getCookie("REMOTEURL");
 
-        // link.href = URL.createObjectURL(blob);
-        // link.download = "attendance.json";
-        // link.click();
-
-        // ! Fix this genralized
-        this.postData("https://crowded-ant-tuxedo.cyclic.app/create-spreadsheet", attendanceArray)
-        alert("Attendance saved to JSON file:", attendanceArray);
+        postData(decodeURIComponent(URL) + "/create-session", attendanceArray)
+            .then((res) => {
+                console.log(res);
+                alert("Attendance saved to JSON file:", attendanceArray);
+            })
     }
 
 
@@ -352,7 +371,7 @@ export default class AttendanceManager {
 
         this.startBtn.addEventListener("click", () => this.startAttendance());
         this.stopBtn.addEventListener("click", () => this.stopAttendance());
-        this.saveBtn.addEventListener("click", () => this.saveAttendanceToFile());
+        this.saveBtn.addEventListener("click", () => this.saveAttendance());
 
         this.faceRecognition = new FaceRecognition(this.video, this.attendanceToday, this.tableBody, this.count);
     }
@@ -370,8 +389,8 @@ export default class AttendanceManager {
         this.updateAttendanceTable();
     }
 
-    saveAttendanceToFile = () => {
-        this.faceRecognition.saveAttendanceToFile();
+    saveAttendance = () => {
+        this.faceRecognition.saveAttendance();
     }
 
     updateAttendanceTable() {
