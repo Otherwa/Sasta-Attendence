@@ -1,4 +1,6 @@
 //  ? Static variable to track attendance status
+
+import PoseNetHandler from "./PoseNetManager.js";
 // ! Original (O.G) File
 let isAttendanceStarted = false;
 
@@ -6,6 +8,7 @@ let isAttendanceStarted = false;
 const progressBar = document.getElementById("myProgressBar");
 progressBar.style.width = "0%";
 progressBar.style.transition = "width 1s ease";
+
 
 class FaceRecognition {
 
@@ -16,7 +19,7 @@ class FaceRecognition {
      * @param {Set} attendanceToday - The set containing the attendance records for the current session.
      * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
      * @param {number} count - The count of attendees for the current session.
-     */
+    */
 
 
     constructor(video, attendanceToday, tableBody, count) {
@@ -28,6 +31,9 @@ class FaceRecognition {
         this.faceMatcher = null;
         this.lastFrameTime = 0;
         this.initialize();
+
+        // * PoseNetHandler
+        this.Posenet = null;
     }
 
     async initialize() {
@@ -36,8 +42,9 @@ class FaceRecognition {
         await this.initializeFaceAPI();
         progressBar.style.width = "50%";
         this.createCanvasFromMedia();
+        await this.initializePoseNet();
         progressBar.style.width = "75%";
-        await this.animate();
+        await this.detectFacesAndPose()
         progressBar.style.width = "100%";
         await this.Running();
     }
@@ -50,9 +57,17 @@ class FaceRecognition {
      * * Creates a canvas element from the provided video stream and appends it to the document.
      */
     createCanvasFromMedia = async () => {
-        this.canvas = faceapi.createCanvasFromMedia(this.video);
-        document.getElementById('video-frame').append(this.canvas);
-        faceapi.matchDimensions(this.canvas, { width: this.video.width, height: this.video.height });
+        // * for face reco
+        this.canvas_face = faceapi.createCanvasFromMedia(this.video);
+        this.canvas_face.id = "video-rec";
+        document.getElementById('video-frame').append(this.canvas_face);
+        faceapi.matchDimensions(this.canvas_face, { width: this.video.width, height: this.video.height });
+
+        // * for pose net
+        this.canvas_pos = faceapi.createCanvasFromMedia(this.video);
+        this.canvas_pos.id = "video-pose";
+        document.getElementById('video-frame').append(this.canvas_pos);
+        faceapi.matchDimensions(this.canvas_pos, { width: this.video.width, height: this.video.height });
     }
 
     /**
@@ -65,6 +80,13 @@ class FaceRecognition {
         } catch (error) {
             console.error("Error accessing webcam:", error);
         }
+    }
+
+    /**
+    * * Initializes the PoseNet from ml5.kjs
+    */
+    async initializePoseNet() {
+        this.Posenet = new PoseNetHandler(this.video, this.canvas_pos);
     }
 
     /**
@@ -242,7 +264,7 @@ class FaceRecognition {
         Array.from(this.attendanceToday).forEach((entry) => {
             const row = document.createElement("tr");
             const entryCell = document.createElement("td");
-            entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp}`;
+            entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp} ${entry.pose}`;
 
             const actionCell = document.createElement("td");
             const removeButton = document.createElement("button");
@@ -263,68 +285,59 @@ class FaceRecognition {
     }
 
     /**
-    * * Animates the face detection process by continuously detecting faces in the video stream.
-    */
-    animate = async () => {
-        const currentTime = Date.now();
-
-        if (isAttendanceStarted) {
-            if (currentTime - this.lastTableUpdateTime >= 2000) {
-                this.updateAttendanceTable();
-                this.lastTableUpdateTime = currentTime;
-            }
-        }
-
-        await this.detectFaces(); // Wait for detectFaces to complete before continuing
-
-        this.lastFrameTime = currentTime;
-        requestAnimationFrame(async () => await this.animate());
-    }
-
-    /**
     * * Detects faces in the video stream and updates the attendance records accordingly.
     */
-    async detectFaces() {
+    async detectFacesAndPose() {
         try {
             const detections = await faceapi.detectAllFaces(this.video)
                 .withFaceLandmarks()
                 .withFaceDescriptors()
                 .withFaceExpressions();
 
-            console.info(detections);
-
             const displaySize = { width: this.video.width, height: this.video.height };
-            faceapi.matchDimensions(this.canvas, displaySize);
+            faceapi.matchDimensions(this.canvas_face, displaySize);
 
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-            this.canvas.getContext("2d").clearRect(0, 0, this.canvas.width, this.canvas.height);
+            // Call drawPoses only once and store the result
+            const pose = await this.Posenet.drawPoses();
 
-            resizedDetections.forEach((detection) => {
+            resizedDetections.forEach(async (detection) => {
+                this.canvas_face.getContext("2d").clearRect(0, 0, this.canvas_face.width, this.canvas_face.height);
+
                 const box = detection.detection.box;
 
-                const match = this.faceMatcher.findBestMatch(detection.descriptor);
+                const match = await this.faceMatcher.findBestMatch(detection.descriptor);
                 const label = match && match.label !== "unknown" ? match.toString() : "unknown";
 
                 const drawBox = new faceapi.draw.DrawBox(box, { label });
-                drawBox.draw(this.canvas);
 
-                // ? Inbuit Expression and Landmark shard model weights
+                await drawBox.draw(this.canvas_face);
 
-                faceapi.draw.drawFaceExpressions(this.canvas, [detection]);
+                // Draw face expressions
+                faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
 
-                faceapi.draw.drawFaceLandmarks(this.canvas, [detection.landmarks]);
+                // Draw face landmarks (if needed)
+                // faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
 
+                // Use the stored pose variable
+                if (pose) {
+                    console.log("Pose Data: " + pose);
+                }
+                console.log(pose);
 
                 const entry = {
                     label: match.label,
                     timestamp: new Date().toISOString(),
+                    pose: pose,
                     present: true,
                 };
 
+                console.log(entry);
+
                 const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
 
-                if (!existingEntry && isAttendanceStarted && entry.label !== "unknown") {
+                if (!existingEntry && entry.label !== "unknown") {
                     this.attendanceToday.add(entry);
                     let totalCount = this.attendanceToday.size;
                     this.count.innerText = "Detected: " + totalCount;
@@ -332,21 +345,25 @@ class FaceRecognition {
             });
 
             // Update attendance table if needed
-            if (isAttendanceStarted) {
-                this.updateAttendanceTable();
-            }
+            this.updateAttendanceTable();
+
+            // Request the next animation frame to continue detecting faces
+            requestAnimationFrame(() => this.detectFacesAndPose());
         } catch (error) {
             console.warn("Error during face detection:", error);
         }
     }
 
-
 }
 
+// Define a variable to control the frame rate
 
-export default class AttendanceManager {
+
+
+
+export default class FaceRecoHandler {
     /**
-   * AttendanceManager class manages the attendance system for a video stream with face recognition.
+   * FaceRecoHandler class manages the attendance system for a video stream with face recognition.
    * It provides functionality to start, stop, and save attendance, as well as update the attendance table.
    * 
    * @param {HTMLElement} videoElement - The HTML video element where the video stream is displayed.
