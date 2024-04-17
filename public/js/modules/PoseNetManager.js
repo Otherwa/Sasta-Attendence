@@ -42,7 +42,7 @@ export default class PoseNetHandler {
                             const x = keypoint.position.x;
                             const y = keypoint.position.y;
                             this.ctx.beginPath();
-                            this.ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                            this.ctx.arc(x, y, 7, 0, 2 * Math.PI);
                             this.ctx.fillStyle = 'blue';
                             this.ctx.fill();
                             this.ctx.fillStyle = 'black';
