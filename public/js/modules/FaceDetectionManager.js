@@ -54,7 +54,7 @@ class FaceRecognition {
     }
 
     /**
-     * * Creates a canvas element from the provided video stream and appends it to the document.
+     * * Creates a canvas elements from the provided video stream and appends it to the document.
      */
     createCanvasFromMedia = async () => {
         // * for face reco
@@ -83,7 +83,7 @@ class FaceRecognition {
     }
 
     /**
-    * * Initializes the PoseNet from ml5.kjs
+    * * Initializes the PoseNet from ml5.js
     */
     async initializePoseNet() {
         this.Posenet = new PoseNetHandler(this.video, this.canvas_pos);
@@ -264,7 +264,7 @@ class FaceRecognition {
         Array.from(this.attendanceToday).forEach((entry) => {
             const row = document.createElement("tr");
             const entryCell = document.createElement("td");
-            entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp} ${entry.pose}`;
+            entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp} ${entry.pose.toString()}`;
 
             const actionCell = document.createElement("td");
             const removeButton = document.createElement("button");
@@ -337,16 +337,38 @@ class FaceRecognition {
 
                 const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
 
-                if (!existingEntry && entry.label !== "unknown") {
-                    this.attendanceToday.add(entry);
+                if (entry.label !== "unknown") {
+                    // * Check if an existing entry exists
+                    if (existingEntry) {
+                        // * Update the existing entry's details
+                        existingEntry.timestamp = entry.timestamp;
+                        existingEntry.pose = entry.pose;
+                    } else {
+                        // ! Add the new entry to the set if it doesn't exist
+                        this.attendanceToday.add(entry);
+                    }
+
+                    // Update the total count
                     let totalCount = this.attendanceToday.size;
                     this.count.innerText = "Detected: " + totalCount;
+
+                    // Cancel the previous update timer if exists
+                    clearTimeout(this.updateTimer);
+
+                    // Schedule the update after 2 seconds
+                    const updatePromise = new Promise((resolve, reject) => {
+                        // Update the attendance table
+                        this.updateAttendanceTable();
+                        resolve();
+                    });
+
+                    // Wait for the update operation to complete before proceeding
+                    await updatePromise;
                 }
+
+
+
             });
-
-            // Update attendance table if needed
-            this.updateAttendanceTable();
-
             // Request the next animation frame to continue detecting faces
             requestAnimationFrame(() => this.detectFacesAndPose());
         } catch (error) {

@@ -4,6 +4,20 @@ export default class PoseNetHandler {
         this.canvas = canvas;
         this.ctx = null;
         this.poseNet = null;
+        this.options = {
+            architecture: 'MobileNetV1',
+            imageScaleFactor: 0.3,
+            outputStride: 16,
+            flipHorizontal: false,
+            minConfidence: 0.5,
+            maxPoseDetections: 5,
+            scoreThreshold: 0.5,
+            nmsRadius: 20,
+            detectionType: 'multiple',
+            inputResolution: 513,
+            multiplier: 0.75,
+            quantBytes: 2,
+        };
         this.initialize();
     }
 
@@ -13,7 +27,7 @@ export default class PoseNetHandler {
         this.ctx = this.canvas.getContext('2d');
 
         // Set up PoseNet
-        this.poseNet = ml5.poseNet(this.video, this.modelLoaded.bind(this));
+        this.poseNet = ml5.poseNet(this.video, this.options, this.modelLoaded.bind(this));
     }
 
     waitForVideoLoad() {
@@ -37,13 +51,14 @@ export default class PoseNetHandler {
                 if (results) {
                     results.forEach((pose) => {
                         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
                         const keypoints = pose.pose.keypoints;
                         keypoints.forEach((keypoint) => {
                             const x = keypoint.position.x;
                             const y = keypoint.position.y;
                             this.ctx.beginPath();
                             this.ctx.arc(x, y, 7, 0, 2 * Math.PI);
-                            this.ctx.fillStyle = 'blue';
+                            this.ctx.fillStyle = 'yellow';
                             this.ctx.fill();
                             this.ctx.fillStyle = 'black';
                             this.ctx.font = '10px Arial';
