@@ -47,10 +47,10 @@ export default class PoseNetHandler {
     async drawPoses() {
         return new Promise((resolve, reject) => {
             this.poseNet.on('pose', (results) => {
-                console.log(results);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 if (results) {
                     results.forEach((pose) => {
-                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
 
                         const keypoints = pose.pose.keypoints;
                         keypoints.forEach((keypoint) => {

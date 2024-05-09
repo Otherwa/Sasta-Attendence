@@ -296,38 +296,27 @@ class FaceRecognition {
 
             const displaySize = { width: this.video.width, height: this.video.height };
             faceapi.matchDimensions(this.canvas_face, displaySize);
-
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
             // Call drawPoses only once and store the result
             const pose = await this.Posenet.drawPoses();
 
-            resizedDetections.forEach(async (detection) => {
-                this.canvas_face.getContext("2d").clearRect(0, 0, this.canvas_face.width, this.canvas_face.height);
+            const newEntries = [];
 
+            await Promise.all(resizedDetections.map(async (detection) => {
                 const box = detection.detection.box;
-
                 const match = await this.faceMatcher.findBestMatch(detection.descriptor);
                 const label = match && match.label !== "unknown" ? match.toString() : "unknown";
 
                 const drawBox = new faceapi.draw.DrawBox(box, { label });
-
                 await drawBox.draw(this.canvas_face);
 
                 // Draw face expressions
                 faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
 
-                // Draw face landmarks (if needed)
-                // faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
-
-                // Use the stored pose variable
-                if (pose) {
-                    console.log("Pose Data: " + pose);
-                }
-                console.log(pose);
-
                 const entry = {
                     label: match.label,
+                    detection: detections,
                     timestamp: new Date().toISOString(),
                     pose: pose,
                     present: true,
@@ -335,46 +324,37 @@ class FaceRecognition {
 
                 console.log(entry);
 
-                const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
-
                 if (entry.label !== "unknown") {
-                    // * Check if an existing entry exists
+                    const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
                     if (existingEntry) {
-                        // * Update the existing entry's details
+                        // Update existing entry's details
                         existingEntry.timestamp = entry.timestamp;
                         existingEntry.pose = entry.pose;
                     } else {
-                        // ! Add the new entry to the set if it doesn't exist
-                        this.attendanceToday.add(entry);
+                        // Add new entry to set
+                        newEntries.push(entry);
                     }
-
-                    // Update the total count
-                    let totalCount = this.attendanceToday.size;
-                    this.count.innerText = "Detected: " + totalCount;
-
-                    // Cancel the previous update timer if exists
-                    clearTimeout(this.updateTimer);
-
-                    // Schedule the update after 2 seconds
-                    const updatePromise = new Promise((resolve, reject) => {
-                        // Update the attendance table
-                        this.updateAttendanceTable();
-                        resolve();
-                    });
-
-                    // Wait for the update operation to complete before proceeding
-                    await updatePromise;
                 }
+            }));
+
+            // Update attendance table for new entries
+            this.attendanceToday = new Set([...this.attendanceToday, ...newEntries]);
+
+            // Update total count
+            this.count.innerText = "Detected: " + this.attendanceToday.size;
+
+            // Schedule batch update for attendance table
+            this.updateAttendanceTable();
 
 
+            setTimeout(() => this.detectFacesAndPose(), 500); // Adjust the delay as needed
 
-            });
-            // Request the next animation frame to continue detecting faces
-            requestAnimationFrame(() => this.detectFacesAndPose());
         } catch (error) {
             console.warn("Error during face detection:", error);
         }
     }
+
+
 
 }
 
