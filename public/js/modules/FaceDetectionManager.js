@@ -1,6 +1,6 @@
 //  ? Static variable to track attendance status
+import PoseDetector from './PoseNetManager.js';
 
-import PoseNetHandler from "./PoseNetManager.js";
 // ! Original (O.G) File
 let isAttendanceStarted = false;
 
@@ -33,7 +33,6 @@ class FaceRecognition {
         this.initialize();
 
         // * PoseNetHandler
-        this.Posenet = null;
     }
 
     async initialize() {
@@ -41,7 +40,8 @@ class FaceRecognition {
         progressBar.style.width = "25%";
         await this.initializeFaceAPI();
         progressBar.style.width = "50%";
-        this.createCanvasFromMedia();
+        await this.createCanvasFromMedia();
+        progressBar.style.width = "65%";
         await this.initializePoseNet();
         progressBar.style.width = "75%";
         await this.detectFacesAndPose()
@@ -63,11 +63,11 @@ class FaceRecognition {
         document.getElementById('video-frame').append(this.canvas_face);
         faceapi.matchDimensions(this.canvas_face, { width: this.video.width, height: this.video.height });
 
-        // * for pose net
-        this.canvas_pos = faceapi.createCanvasFromMedia(this.video);
-        this.canvas_pos.id = "video-pose";
-        document.getElementById('video-frame').append(this.canvas_pos);
-        faceapi.matchDimensions(this.canvas_pos, { width: this.video.width, height: this.video.height });
+        // * for face reco
+        this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
+        this.canvas_pose.id = "video-pose";
+        document.getElementById('video-frame').append(this.canvas_pose);
+        faceapi.matchDimensions(this.canvas_pose, { width: this.video.width, height: this.video.height });
     }
 
     /**
@@ -86,7 +86,8 @@ class FaceRecognition {
     * * Initializes the PoseNet from ml5.js
     */
     async initializePoseNet() {
-        this.Posenet = new PoseNetHandler(this.video, this.canvas_pos);
+        this.Posenet = new PoseDetector(this.video, this.canvas_pose);
+        await this.Posenet.setup();
     }
 
     /**
@@ -259,13 +260,13 @@ class FaceRecognition {
     * *  Updates the attendance table with the current attendance records.
     */
     updateAttendanceTable = () => {
+        console.log(this.attendanceToday)
         this.tableBody.innerHTML = "";
 
         Array.from(this.attendanceToday).forEach((entry) => {
             const row = document.createElement("tr");
             const entryCell = document.createElement("td");
-            entryCell.textContent = `${entry.label} ${entry.present} ${entry.timestamp} ${entry.pose.toString()}`;
-
+            entryCell.textContent = `${entry.label} ${entry.detections} ${entry.timestamp}`;
             const actionCell = document.createElement("td");
             const removeButton = document.createElement("button");
             removeButton.className = "button is-warning";
@@ -298,64 +299,62 @@ class FaceRecognition {
             faceapi.matchDimensions(this.canvas_face, displaySize);
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-            // Call drawPoses only once and store the result
-            const pose = await this.Posenet.drawPoses();
+            const newEntries = new Array();
 
-            const newEntries = [];
+            await this.Posenet.draw();
 
-            await Promise.all(resizedDetections.map(async (detection) => {
+            for (const detection of resizedDetections) {
                 const box = detection.detection.box;
                 const match = await this.faceMatcher.findBestMatch(detection.descriptor);
                 const label = match && match.label !== "unknown" ? match.toString() : "unknown";
 
-                const drawBox = new faceapi.draw.DrawBox(box, { label });
+                console.log(match)
+
+                const drawBox = await new faceapi.draw.DrawBox(box, { label });
                 await drawBox.draw(this.canvas_face);
 
                 // Draw face expressions
-                faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
+                await faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
+
+
 
                 const entry = {
                     label: match.label,
-                    detection: detections,
+                    detections: detection,
                     timestamp: new Date().toISOString(),
-                    pose: pose,
-                    present: true,
                 };
 
-                console.log(entry);
 
                 if (entry.label !== "unknown") {
                     const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
                     if (existingEntry) {
                         // Update existing entry's details
                         existingEntry.timestamp = entry.timestamp;
-                        existingEntry.pose = entry.pose;
                     } else {
                         // Add new entry to set
                         newEntries.push(entry);
                     }
                 }
-            }));
+            }
 
-            // Update attendance table for new entries
-            this.attendanceToday = new Set([...this.attendanceToday, ...newEntries]);
+            // Add new entries to the attendance set
+            newEntries.forEach(entry => this.attendanceToday.add(entry));
 
             // Update total count
             this.count.innerText = "Detected: " + this.attendanceToday.size;
 
-            // Schedule batch update for attendance table
+            // Update attendance table
             this.updateAttendanceTable();
 
+            // Schedule next frame
+            requestAnimationFrame(() => this.detectFacesAndPose());
 
-            setTimeout(() => this.detectFacesAndPose(), 500); // Adjust the delay as needed
+
 
         } catch (error) {
             console.warn("Error during face detection:", error);
         }
     }
-
-
-
 }
 
 // Define a variable to control the frame rate
