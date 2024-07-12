@@ -11,6 +11,10 @@ export default class PoseDetector {
     async setup() {
         // Initialize the bodyPose model
         this.bodyPose = ml5.bodyPose(this.video, this.modelLoaded.bind(this));
+
+        // Set canvas dimensions to match video dimensions
+        this.canvas.width = this.video.videoWidth;
+        this.canvas.height = this.video.videoHeight;
     }
 
     modelLoaded() {

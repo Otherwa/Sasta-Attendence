@@ -66,7 +66,7 @@ class FaceRecognition {
         // * for face reco
         this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
         this.canvas_pose.id = "video-pose";
-        this.canvas_pose.style = "left: 91px;";
+        this.canvas_pose.style = "left: 95px;";
         document.getElementById('video-frame').append(this.canvas_pose);
         faceapi.matchDimensions(this.canvas_pose, { width: this.video.width, height: this.video.height });
     }
