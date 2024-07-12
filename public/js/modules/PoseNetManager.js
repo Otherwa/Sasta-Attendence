@@ -6,24 +6,21 @@ export default class PoseDetector {
         this.bodyPose = null;
         this.poses = [];
         this.connections = null;
-
-        // Set canvas dimensions to match video dimensions
-        this.canvas.width = this.video.width;
-        this.canvas.height = this.video.height;
     }
 
     async setup() {
         // Initialize the bodyPose model
         this.bodyPose = ml5.bodyPose(this.video, this.modelLoaded.bind(this));
-
-        // Get the skeleton connection information
-        this.connections = this.bodyPose.getSkeleton();
     }
 
     modelLoaded() {
         console.log('Model loaded!');
+        // Get the skeleton connection information
+        this.connections = this.bodyPose.getSkeleton();
         // Start detecting poses in the webcam video
         this.bodyPose.detectStart(this.video, this.gotPoses.bind(this));
+        // Start drawing frames
+        requestAnimationFrame(this.draw.bind(this));
     }
 
     async draw() {
@@ -32,21 +29,24 @@ export default class PoseDetector {
 
         // Check if video is playing and draw the skeleton connections
         if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
-            // Here, you can manipulate canvas drawing based on poses and connections
-            for (let i = 0; i < this.poses.length; i++) {
-                let pose = this.poses[i];
-                console.log(pose)
-                for (let j = 0; j < this.connections.length; j++) {
-                    let pointAIndex = this.connections[j][0];
-                    let pointBIndex = this.connections[j][1];
-                    let pointA = pose.keypoints[pointAIndex];
-                    let pointB = pose.keypoints[pointBIndex];
-                    // Only draw a line if both points are confident enough
-                    if (pointA.score > 0.5 && pointB.score > 0.5) {
-                        this.drawLine(pointA.position.x, pointA.position.y, pointB.position.x, pointB.position.y);
-                    }
-                }
-            }
+            this.poses.forEach(pose => {
+                // Draw skeleton
+                this.connections.forEach(connection => {
+                    const [partA, partB] = connection;
+                    const pointA = pose.keypoints[partA];
+                    const pointB = pose.keypoints[partB];
+                    // if (pointA.score > 0.4 && pointB.score > 0.4) {
+                    this.drawLine(pointA.x, pointA.y, pointB.x, pointB.y);
+                    // }
+                });
+
+                // Draw keypoints
+                pose.keypoints.forEach(keypoint => {
+                    // if (keypoint.score > 0.4) {
+                    this.drawKeypoint(keypoint.x, keypoint.y);
+                    // }
+                });
+            });
         }
 
         // Request the next frame update
@@ -64,5 +64,12 @@ export default class PoseDetector {
         this.ctx.strokeStyle = 'red';
         this.ctx.lineWidth = 2;
         this.ctx.stroke();
+    }
+
+    drawKeypoint(x, y) {
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'blue';
+        this.ctx.fill();
     }
 }

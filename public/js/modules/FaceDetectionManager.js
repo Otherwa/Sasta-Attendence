@@ -66,6 +66,7 @@ class FaceRecognition {
         // * for face reco
         this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
         this.canvas_pose.id = "video-pose";
+        this.canvas_pose.style = "left: 91px;";
         document.getElementById('video-frame').append(this.canvas_pose);
         faceapi.matchDimensions(this.canvas_pose, { width: this.video.width, height: this.video.height });
     }
@@ -311,12 +312,11 @@ class FaceRecognition {
                 console.log(match)
 
                 const drawBox = await new faceapi.draw.DrawBox(box, { label });
+
                 await drawBox.draw(this.canvas_face);
 
                 // Draw face expressions
                 await faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
-
-
 
                 const entry = {
                     label: match.label,
