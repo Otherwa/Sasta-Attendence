@@ -17,14 +17,14 @@ export default class PoseDetector {
         this.canvas.height = this.video.videoHeight;
     }
 
-    modelLoaded() {
+    async modelLoaded() {
         console.log('Model loaded!');
         // Get the skeleton connection information
         this.connections = this.bodyPose.getSkeleton();
         // Start detecting poses in the webcam video
-        this.bodyPose.detectStart(this.video, this.gotPoses.bind(this));
+        await this.bodyPose.detectStart(this.video, await this.gotPoses.bind(this));
         // Start drawing frames
-        requestAnimationFrame(this.draw.bind(this));
+        requestAnimationFrame(await this.draw.bind(this));
     }
 
     async draw() {
@@ -54,10 +54,12 @@ export default class PoseDetector {
         }
 
         // Request the next frame update
-        requestAnimationFrame(this.draw.bind(this));
+        requestAnimationFrame(await this.draw.bind(this));
+
+        return this.poses;
     }
 
-    gotPoses(results) {
+    async gotPoses(results) {
         this.poses = results;
     }
 
@@ -75,5 +77,10 @@ export default class PoseDetector {
         this.ctx.arc(x, y, 5, 0, 2 * Math.PI);
         this.ctx.fillStyle = 'blue';
         this.ctx.fill();
+    }
+
+    // Method to get detected poses
+    async getDetectedPoses() {
+        return this.poses;
     }
 }

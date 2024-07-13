@@ -302,7 +302,8 @@ class FaceRecognition {
 
             const newEntries = new Array();
 
-            await this.Posenet.draw();
+
+            // Get detected poses from PoseDetector
 
             for (const detection of resizedDetections) {
                 const box = detection.detection.box;
@@ -318,8 +319,11 @@ class FaceRecognition {
                 // Draw face expressions
                 await faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
 
+                const poses = await this.Posenet.draw();
+
                 const entry = {
                     label: match.label,
+                    poses: poses,
                     detections: detection,
                     timestamp: new Date().toISOString(),
                 };
@@ -330,6 +334,7 @@ class FaceRecognition {
                     if (existingEntry) {
                         // Update existing entry's details
                         existingEntry.timestamp = entry.timestamp;
+                        existingEntry.poses = entry.poses;
                     } else {
                         // Add new entry to set
                         newEntries.push(entry);
