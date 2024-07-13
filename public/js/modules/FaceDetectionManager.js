@@ -210,50 +210,8 @@ class FaceRecognition {
     */
     saveAttendance = () => {
 
-        // * get session name 
-        const sessionname = document.getElementById("sessionname");
-        let sessName = sessionname.value
-
-        async function postData(url, data) {
-            // Default options are marked with *
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    key: "tatakae",
-                    name: sessName,
-                    students: data
-                })
-            });
-            return await response.json();
-        }
-
-        // *function to get cookies
-        function getCookie(cname) {
-            let name = cname + "=";
-            let ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') {
-                    c = c.substring(1);
-                }
-                if (c.indexOf(name) == 0) {
-                    return c.substring(name.length, c.length);
-                }
-            }
-            return "";
-        }
-
-        const attendanceArray = Array.from(this.attendanceToday);
-        const URL = getCookie("REMOTEURL");
-
-        postData(decodeURIComponent(URL) + "/create-session", attendanceArray)
-            .then((res) => {
-                console.log(res);
-                alert("Attendance saved to JSON file:", attendanceArray);
-            })
+        // Call saveToExcel to update the Excel sheet continuously
+        this.saveToExcel(this.attendanceToday);
     }
 
 
@@ -300,24 +258,19 @@ class FaceRecognition {
             faceapi.matchDimensions(this.canvas_face, displaySize);
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-            const newEntries = new Array();
-
-
-            // Get detected poses from PoseDetector
+            const newEntries = [];
 
             for (const detection of resizedDetections) {
                 const box = detection.detection.box;
                 const match = await this.faceMatcher.findBestMatch(detection.descriptor);
                 const label = match && match.label !== "unknown" ? match.toString() : "unknown";
 
-                console.log(match)
+                console.log(match);
 
-                const drawBox = await new faceapi.draw.DrawBox(box, { label });
+                const drawBox = new faceapi.draw.DrawBox(box, { label });
+                drawBox.draw(this.canvas_face);
 
-                await drawBox.draw(this.canvas_face);
-
-                // Draw face expressions
-                await faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
+                faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
 
                 const poses = await this.Posenet.draw();
 
@@ -328,38 +281,65 @@ class FaceRecognition {
                     timestamp: new Date().toISOString(),
                 };
 
-
                 if (entry.label !== "unknown") {
                     const existingEntry = Array.from(this.attendanceToday).find((e) => e.label === entry.label);
                     if (existingEntry) {
-                        // Update existing entry's details
                         existingEntry.timestamp = entry.timestamp;
                         existingEntry.poses = entry.poses;
                     } else {
-                        // Add new entry to set
                         newEntries.push(entry);
                     }
                 }
             }
 
-            // Add new entries to the attendance set
             newEntries.forEach(entry => this.attendanceToday.add(entry));
-
-            // Update total count
             this.count.innerText = "Detected: " + this.attendanceToday.size;
-
-            // Update attendance table
             this.updateAttendanceTable();
 
-            // Schedule next frame
+
+
             requestAnimationFrame(() => this.detectFacesAndPose());
-
-
 
         } catch (error) {
             console.warn("Error during face detection:", error);
         }
     }
+
+    saveToExcel(attendanceSet) {
+        const data = Array.from(attendanceSet).map(entry => ({
+            Label: entry.label,
+            Timestamp: entry.timestamp,
+            Poses: JSON.stringify(entry.poses),
+            Detections: JSON.stringify(entry.detections)
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+
+        // Create a blob from the workbook
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+        const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
+
+        // Create a link element to download the blob
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "attendance.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+
+
+function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < s.length; i++) {
+        view[i] = s.charCodeAt(i) & 0xFF;
+    }
+    return buf;
 }
 
 // Define a variable to control the frame rate
@@ -382,42 +362,22 @@ export default class FaceRecoHandler {
    */
 
 
-    constructor(videoElement, startBtn, stopBtn, saveBtn, tableBody, status, count) {
+    constructor(videoElement, saveBtn, tableBody, status, count) {
         this.video = videoElement;
-        this.startBtn = startBtn;
-        this.stopBtn = stopBtn;
         this.saveBtn = saveBtn;
         this.tableBody = tableBody;
         this.status = status;
         this.count = count;
         this.attendanceToday = new Set();
 
-        this.startBtn.addEventListener("click", () => this.startAttendance());
-        this.stopBtn.addEventListener("click", () => this.stopAttendance());
+
         this.saveBtn.addEventListener("click", () => this.saveAttendance());
 
         this.faceRecognition = new FaceRecognition(this.video, this.attendanceToday, this.tableBody, this.count);
     }
 
-    startAttendance = async () => {
-        this.status.innerText = "Active";
-        isAttendanceStarted = true;
-        this.attendanceToday.clear();
-        // await this.faceRecognition.detectFaces();
-    }
-
-    stopAttendance = () => {
-        this.status.innerText = "Inactive";
-        isAttendanceStarted = false;
-        this.updateAttendanceTable();
-    }
-
     saveAttendance = () => {
         this.faceRecognition.saveAttendance();
-    }
-
-    updateAttendanceTable() {
-        this.faceRecognition.updateAttendanceTable();
     }
 }
 
