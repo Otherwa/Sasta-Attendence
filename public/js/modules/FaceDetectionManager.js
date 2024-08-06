@@ -1,10 +1,11 @@
-//  ? Static variable to track attendance status
+// ? ! Original (O.G) File
+
+// ?  ? Static variable to track attendance status
 import PoseDetector from './PoseNetManager.js';
 
-// ! Original (O.G) File
 let isAttendanceStarted = false;
 
-// Display the progress bar initially
+// ? Display the progress bar initially
 const progressBar = document.getElementById("myProgressBar");
 progressBar.style.width = "0%";
 progressBar.style.transition = "width 1s ease";
@@ -32,7 +33,7 @@ class FaceRecognition {
         this.lastFrameTime = 0;
         this.initialize();
 
-        // * PoseNetHandler
+        // ? * PoseNetHandler
     }
 
     async initialize() {
@@ -57,13 +58,13 @@ class FaceRecognition {
      * * Creates a canvas elements from the provided video stream and appends it to the document.
      */
     createCanvasFromMedia = async () => {
-        // * for face reco
+        // ? * for face reco
         this.canvas_face = faceapi.createCanvasFromMedia(this.video);
         this.canvas_face.id = "video-rec";
         document.getElementById('video-frame').append(this.canvas_face);
         faceapi.matchDimensions(this.canvas_face, { width: this.video.width, height: this.video.height });
 
-        // * for face reco
+        // ? * for face reco
         this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
         this.canvas_pose.id = "video-pose";
         this.canvas_pose.style = "left: 95px;";
@@ -125,12 +126,12 @@ class FaceRecognition {
             let labeledFaceDescriptorsFromLocalStorage = localStorage.getItem('labeledFaceDescriptors');
 
             if (labeledFaceDescriptorsFromLocalStorage) {
-                // Deserialize the data from localStorage
+                // ? Deserialize the data from localStorage
                 const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
 
-                // Convert each index value to LabeledFaceDescriptors object
+                // ? Convert each index value to LabeledFaceDescriptors object
                 const labeledFaceDescriptors = parsedData.map(item => {
-                    // ? Caching
+                    // ? ? Caching
                     const descriptors = item._descriptors.map(descriptor => {
                         const values = Object.values(descriptor);
                         return new Float32Array(values);
@@ -153,7 +154,7 @@ class FaceRecognition {
                     })
                 );
 
-                // Serialize and save the data to localStorage
+                // ? Serialize and save the data to localStorage
                 const serializedData = JSON.stringify(labeledFaceDescriptors);
                 localStorage.setItem('labeledFaceDescriptors', serializedData);
 
@@ -178,7 +179,7 @@ class FaceRecognition {
         const descriptions = [];
         console.warn(labels);
         try {
-            // * enum number of images
+            // ? * enum number of images
             for (let i = 1; i <= labels.length; i++) {
                 const img = await faceapi.fetchImage(`./peeps/${labels[0]}/${labels[1]}.jpg`);
 
@@ -210,7 +211,8 @@ class FaceRecognition {
     */
     saveAttendance = () => {
 
-        // Call saveToExcel to update the Excel sheet continuously
+
+        // ? Call saveToExcel to update the Excel sheet continuously
         this.saveToExcel(this.attendanceToday);
     }
 
@@ -272,6 +274,8 @@ class FaceRecognition {
 
                 faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
 
+                faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
+
                 const poses = await this.Posenet.draw();
 
                 const entry = {
@@ -317,11 +321,13 @@ class FaceRecognition {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Attendance");
 
-        // Create a blob from the workbook
+
+        // ? Create a blob from the workbook
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
         const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
 
-        // Create a link element to download the blob
+        // ? Create a link element to download the blob
+      
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "attendance.xlsx";
@@ -342,7 +348,7 @@ function s2ab(s) {
     return buf;
 }
 
-// Define a variable to control the frame rate
+// ? Define a variable to control the frame rate
 
 
 
