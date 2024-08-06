@@ -211,6 +211,7 @@ class FaceRecognition {
     */
     saveAttendance = () => {
 
+
         // ? Call saveToExcel to update the Excel sheet continuously
         this.saveToExcel(this.attendanceToday);
     }
@@ -320,11 +321,13 @@ class FaceRecognition {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Attendance");
 
+
         // ? Create a blob from the workbook
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
         const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
 
         // ? Create a link element to download the blob
+      
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "attendance.xlsx";

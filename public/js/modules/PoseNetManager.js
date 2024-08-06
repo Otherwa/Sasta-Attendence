@@ -34,6 +34,7 @@ export default class PoseDetector {
         // ? Check if video is playing and draw the skeleton connections
         if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
             this.poses.forEach(pose => {
+
                 // ? Draw skeleton
                 this.connections.forEach(connection => {
                     const [partA, partB] = connection;
@@ -78,7 +79,7 @@ export default class PoseDetector {
         this.ctx.fillStyle = 'blue';
         this.ctx.fill();
     }
-
+  
     // ? Method to get detected poses
     async getDetectedPoses() {
         return this.poses;
