@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Capture and Upload</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="/js/workers/image_taker_worker.js"></script>
+</head>
+
+<body>
+    <video id="video" autoplay></video>
+    <button id="startButton">Start Capturing</button>
+    <button id="stopButton">Stop Capturing</button>
+    <p>Image Count</p>
+    <p id="count">0</p>
+    <p id="info"></p>
+    <label for="zipName">Enter Person Name:</label>
+    <input type="text" id="zipName" placeholder="Enter Person Name">
+    <canvas id="canvas" style="display:none;"></canvas>
+    <script>
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+        let startButton = document.getElementById('startButton');
+        let stopButton = document.getElementById('stopButton');
+        let countDisplay = document.getElementById('count');
+        let zipNameInput = document.getElementById('zipName');
+        let imageIndex = 1;
+        let maxImages = 50;
+        let images = [];
+        let zip = new JSZip();
+        let captureInterval = 500; // Capture interval in milliseconds
+
+        // Create a new Web Worker
+        const captureWorker = new Worker('/js/workers/image_taker_worker.js');
+
+        async function startVideo() {
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.play();
+                console.log("Camera access granted and video playing.");
+
+                // Wait for the video to start playing to get the video resolution
+                video.onloadedmetadata = () => {
+                    let videoWidth = video.videoWidth;
+                    let videoHeight = video.videoHeight;
+
+                    // Set canvas dimensions to match the video dimensions
+                    canvas.width = videoWidth;
+                    canvas.height = videoHeight;
+
+                    console.log(`Video resolution: ${videoWidth}x${videoHeight}`);
+                };
+            } catch (err) {
+                console.error("Error accessing the camera: ", err);
+            }
+        }
+
+        // Capture image from video stream and store it in the images array
+        function captureImage() {
+            if (imageIndex <= maxImages) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    let imageName = `${imageIndex}.jpg`;
+                    images.push({ name: imageName, blob: blob });
+                    console.log(`Captured image ${imageName}`);
+
+                    imageIndex++;
+                    countDisplay.textContent = imageIndex - 1;
+                    if (imageIndex > maxImages) {
+                        createZip();
+                    }
+                }, 'image/jpeg', 1.0); // 1.0 quality for high resolution
+            }
+        }
+
+        // Create ZIP file and send it to the server
+        function createZip() {
+            images.forEach(image => {
+                zip.file(image.name, image.blob);
+            });
+
+            zip.generateAsync({ type: 'blob' }).then(content => {
+                let zipName = (zipNameInput.value + ".zip") || 'images.zip'; // Use default name if empty
+                let formData = new FormData();
+                formData.append('file', content, zipName);
+                canvas.style.display = "none";
+                fetch('/input', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(result => {
+                        console.log(result);
+                        document.getElementById('info').innerText = "Person Data Succesfuly uploaded";
+                    })
+                    .catch(error => {
+                        console.error('Error uploading ZIP file:', error);
+                    });
+            });
+        }
+
+        // Start capturing images when button is clicked
+        startButton.addEventListener('click', () => {
+            console.log("Start button clicked. Beginning image capture.");
+            canvas.style.display = "block";
+            captureWorker.postMessage({
+                command: 'start',
+                interval: captureInterval
+            });
+        });
+
+        // Stop capturing images when button is clicked
+        stopButton.addEventListener('click', () => {
+            console.log("Stop button clicked. Stopping image capture.");
+            captureWorker.postMessage({
+                command: 'stop'
+            });
+        });
+
+        // Listen for messages from the worker
+        captureWorker.onmessage = function (e) {
+            if (e.data === 'capture') {
+                captureImage();
+            }
+        };
+
+        // Initialize video stream
+        startVideo();
+    </script>
+</body>
+
+</html>

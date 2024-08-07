@@ -2,13 +2,23 @@
   "labels": [
     ["Tejas Chaudhari",9],
     ["Shariquee Bhai",8],
+<<<<<<< HEAD
     ["Avinash Banyal",9],
+=======
+    ["Avinash Banyal",8],
+>>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
     ["Shubhvrat Kulkarni",5],
     ["Suchit Patil",7],
     ["Vaibhav Dhonde",9],
     ["Aryan Satra",9],
+<<<<<<< HEAD
     ["Prashant Ghode",9],
     ["Atharv Desai",9],
     ["errors",3]
+=======
+    ["Prashant Ghode",6],
+    ["Atharv Desai",50],
+    ["Riya Kadam 13",50]
+>>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
   ]
 }
