@@ -1,25 +1,15 @@
-<<<<<<< HEAD
-// ? ! Original (O.G) File
-
-// ?  ? Static variable to track attendance status
-=======
 // ?  ! Original (O.G) File
 
 // ?   ? Static variable to track attendance status
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
 import PoseDetector from './PoseNetManager.js';
 
 let isAttendanceStarted = false;
 
-<<<<<<< HEAD
-// ? Display the progress bar initially
-=======
 /**
  * *https://justadudewhohacks.github.io/face-api.js/docs/globals.html 
  * */
 
 // ?  Display the progress bar initially
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
 const progressBar = document.getElementById("myProgressBar");
 progressBar.style.width = "0%";
 progressBar.style.transition = "width 1s ease";
@@ -47,11 +37,7 @@ class FaceRecognition {
         this.lastFrameTime = 0;
         this.initialize();
 
-<<<<<<< HEAD
-        // ? * PoseNetHandler
-=======
         // ?  * PoseNetHandler
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
     }
 
     async initialize() {
@@ -76,21 +62,13 @@ class FaceRecognition {
      * * Creates a canvas elements from the provided video stream and appends it to the document.
      */
     createCanvasFromMedia = async () => {
-<<<<<<< HEAD
-        // ? * for face reco
-=======
         // ?  * for face reco
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
         this.canvas_face = faceapi.createCanvasFromMedia(this.video);
         this.canvas_face.id = "video-rec";
         document.getElementById('video-frame').append(this.canvas_face);
         faceapi.matchDimensions(this.canvas_face, { width: this.video.width, height: this.video.height });
 
-<<<<<<< HEAD
-        // ? * for face reco
-=======
         // ?  * for face reco
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
         this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
         this.canvas_pose.id = "video-pose";
         // this.canvas_pose.style = "left: 95px;";
@@ -152,21 +130,12 @@ class FaceRecognition {
             let labeledFaceDescriptorsFromLocalStorage = localStorage.getItem('labeledFaceDescriptors');
 
             if (labeledFaceDescriptorsFromLocalStorage) {
-<<<<<<< HEAD
-                // ? Deserialize the data from localStorage
-                const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
-
-                // ? Convert each index value to LabeledFaceDescriptors object
-                const labeledFaceDescriptors = parsedData.map(item => {
-                    // ? ? Caching
-=======
                 // ?  Deserialize the data from localStorage
                 const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
 
                 // ?  Convert each index value to LabeledFaceDescriptors object
                 const labeledFaceDescriptors = parsedData.map(item => {
                     // ?  ? Caching
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
                     const descriptors = item._descriptors.map(descriptor => {
                         const values = Object.values(descriptor);
                         return new Float32Array(values);
@@ -189,11 +158,7 @@ class FaceRecognition {
                     })
                 );
 
-<<<<<<< HEAD
-                // ? Serialize and save the data to localStorage
-=======
                 // ?  Serialize and save the data to localStorage
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
                 const serializedData = JSON.stringify(labeledFaceDescriptors);
                 localStorage.setItem('labeledFaceDescriptors', serializedData);
 
@@ -218,15 +183,9 @@ class FaceRecognition {
         const descriptions = [];
         console.warn(labels);
         try {
-<<<<<<< HEAD
-            // ? * enum number of images
-            for (let i = 1; i <= labels.length; i++) {
-                const img = await faceapi.fetchImage(`./peeps/${labels[0]}/${labels[1]}.jpg`);
-=======
             // Increase the number of images per person
             for (let i = 1; i <= labels[1]; i++) {
                 console.log(`Processing image ${i} for label ${labels[0]}`);
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
 
                 // ? in index.js Route
                 const imgPath = `./peeps/uploads/${labels[0]}/${i}.jpg`;
@@ -266,11 +225,7 @@ class FaceRecognition {
     saveAttendance = () => {
 
 
-<<<<<<< HEAD
-        // ? Call saveToExcel to update the Excel sheet continuously
-=======
         // ?  Call saveToExcel to update the Excel sheet continuously
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
         this.saveToExcel(this.attendanceToday);
     }
 
@@ -464,20 +419,11 @@ class FaceRecognition {
         XLSX.utils.book_append_sheet(wb, ws, "Attendance");
 
 
-<<<<<<< HEAD
-        // ? Create a blob from the workbook
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-        const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
-
-        // ? Create a link element to download the blob
-      
-=======
         // ?  Create a blob from the workbook
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
         const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
 
         // ?  Create a link element to download the blob
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "attendance.xlsx";
@@ -498,14 +444,6 @@ function s2ab(s) {
     return buf;
 }
 
-<<<<<<< HEAD
-// ? Define a variable to control the frame rate
-
-
-
-
-=======
->>>>>>> 08b41d806d1db3954c60ebeaac736a52fbcad792
 export default class FaceRecoHandler {
     /**
    * FaceRecoHandler class manages the attendance system for a video stream with face recognition.
