@@ -3,8 +3,6 @@
 // ?   ? Static variable to track attendance status
 import PoseDetector from './PoseNetManager.js';
 
-let isAttendanceStarted = false;
-
 /**
  * *https://justadudewhohacks.github.io/face-api.js/docs/globals.html 
  * */
@@ -34,11 +32,17 @@ class FaceRecognition {
         this.lastTableUpdateTime = 0;
         this.count = count;
         this.faceMatcher = null;
-        this.lastFrameTime = 0;
+        this.isDetecting = false; // Flag to control the loop
+        this.detectionFrameId = null; // To store the animation frame ID
+        this.lastUpdate = 0; // To track the last update timestamp
+        this.detectionInterval = 60000; // 60 seconds default
+        this.detectionLimit = 5; // Default detection limit
         this.initialize();
 
         // ?  * PoseNetHandler
     }
+
+
 
     async initialize() {
         await this.startWebcam();
@@ -48,10 +52,61 @@ class FaceRecognition {
         await this.createCanvasFromMedia();
         progressBar.style.width = "65%";
         await this.initializePoseNet();
+
         progressBar.style.width = "75%";
-        await this.detectFacesAndPose()
+
+
+        // Get user inputs for detection interval and limit
+        const intervalInput = document.getElementById('detection-interval');
+        const intervalValue = document.getElementById('detection-interval-value');
+        const limitInput = document.getElementById('detection-limit');
+        const limitValue = document.getElementById('detection-limit-value');
+
+        // Set initial values
+        intervalValue.innerText = intervalInput.value;
+        this.detectionInterval = parseInt(intervalInput.value * 1000, 10) || 1000;
+
+        limitValue.innerText = limitInput.value;
+        this.detectionLimit = parseInt(limitInput.value, 10) || 5;
+
+        // Listen for changes to the interval input
+        intervalInput.addEventListener('input', (event) => {
+            this.detectionInterval = parseInt(event.target.value, 10);
+            intervalValue.innerText = this.detectionInterval;
+            this.restartDetectionLoop(); // Restart the loop with the new interval
+        });
+
+        // Listen for changes to the limit input
+        limitInput.addEventListener('input', (event) => {
+            this.detectionLimit = parseInt(event.target.value, 10);
+            limitValue.innerText = this.detectionLimit;
+        });
+
+        // Start the detection loop
+        this.startDetectionLoop();
+
         progressBar.style.width = "100%";
         await this.Running();
+    }
+
+
+    startDetectionLoop() {
+        this.isDetecting = true; // Set flag to true
+        this.detectFacesAndPose(); // Start detection
+    }
+
+    stopDetectionLoop() {
+        this.isDetecting = false; // Set flag to false
+        if (this.detectionFrameId) {
+            cancelAnimationFrame(this.detectionFrameId); // Cancel the ongoing animation frame
+            this.detectionFrameId = null; // Reset the ID
+        }
+    }
+
+    restartDetectionLoop() {
+        this.stopDetectionLoop(); // Ensure any ongoing detection stops
+        this.lastUpdate = 0; // Reset the last update timestamp
+        this.startDetectionLoop(); // Start the detection loop
     }
 
     async Running() {
@@ -324,8 +379,9 @@ class FaceRecognition {
     */
     async detectFacesAndPose() {
         try {
-            const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 })
+            const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 });
 
+            // Detect faces and get pose data
             const detections = await faceapi.detectAllFaces(this.video, options)
                 .withFaceLandmarks()
                 .withFaceDescriptors()
@@ -336,75 +392,85 @@ class FaceRecognition {
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
             const newEntries = [];
+            const currentTime = new Date().getTime();
 
-            for (const detection of resizedDetections) {
-                const box = detection.detection.box;
-                const match = await this.faceMatcher.findBestMatch(detection.descriptor);
-                const label = match && match.label !== "unknown" ? match : "unknown";
+            // Check if enough time has passed since the last update
+            if (currentTime - this.lastUpdate >= this.detectionInterval) {
+                for (const detection of resizedDetections) {
+                    const box = detection.detection.box;
+                    const match = await this.faceMatcher.findBestMatch(detection.descriptor);
+                    const label = match && match.label !== "unknown" ? match : "unknown";
 
-                console.log(match);
+                    console.log(match);
 
-                const drawBox = new faceapi.draw.DrawBox(box, { label });
-                drawBox.draw(this.canvas_face);
+                    const drawBox = new faceapi.draw.DrawBox(box, { label });
+                    drawBox.draw(this.canvas_face);
 
-                faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
-                faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
+                    faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
+                    faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
 
-                faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
+                    const poses = await this.Posenet.draw();
+                    const isAttentive = await this.analyzeAttentiveness(detection, poses);
 
-                const poses = await this.Posenet.draw();
-                const isAttentive = await this.analyzeAttentiveness(detection, poses);
+                    let entry = Array.from(this.attendanceToday).find((e) => e.label === label.toString().split(' (')[0]);
 
-                let entry = Array.from(this.attendanceToday).find((e) => e.label === label);
+                    if (entry) {
+                        entry.timestamp = new Date().toISOString();
+                        entry.poses = poses;
+                        entry.attentiveness = isAttentive ? "Attentive" : "Not Attentive";
 
-                if (entry) {
-                    entry.timestamp = new Date().toISOString();
-                    entry.poses = poses;
-                    entry.attentiveness = isAttentive ? "Attentive" : "Not Attentive";
-
-                    // ? Add the new detection and keep only the last 5
-                    entry.detections.push([detection, new Date().toISOString()]);
-                    if (entry.detections.length > 5) {
-                        entry.detections.shift();
-                    }
-                } else {
-                    entry = {
-                        label: label.toString().split(' (')[0],
-                        poses: poses,
-                        detections: [[detection, new Date().toISOString()]],  // ? Start with the current detection
-                        attentiveness: isAttentive ? "Attentive" : "Not Attentive",
-                        timestamp: new Date().toISOString(),
-                    };
-                    if (entry.label !== "unknown") {
-                        newEntries.push(entry);
+                        // Add the new detection and keep only the last 5
+                        entry.detections.push([detection, new Date().toISOString()]);
+                        if (entry.detections.length > this.detectionLimit) {
+                            entry.detections.shift();
+                        }
+                    } else {
+                        entry = {
+                            label: label.toString().split(' (')[0],
+                            poses: poses,
+                            detections: [[detection, new Date().toISOString()]],  // Start with the current detection
+                            attentiveness: isAttentive ? "Attentive" : "Not Attentive",
+                            timestamp: new Date().toISOString(),
+                        };
+                        if (entry.label !== "unknown") {
+                            newEntries.push(entry);
+                        }
                     }
                 }
+
+                // Update existing entries or add new ones
+                newEntries.forEach(entry => {
+                    const existingEntry = Array.from(this.attendanceToday).find(e => e.label === entry.label);
+                    if (existingEntry) {
+                        // Update existing entry
+                        existingEntry.timestamp = entry.timestamp;
+                        existingEntry.poses = entry.poses;
+                        existingEntry.attentiveness = entry.attentiveness;
+                        existingEntry.detections = entry.detections;
+                    } else {
+                        // Add new entry
+                        this.attendanceToday.add(entry);
+                    }
+                });
+
+                this.count.innerText = "Detected: " + this.attendanceToday.size;
+                this.updateAttendanceTable();
+
+                // Update the last update time
+                this.lastUpdate = currentTime;
             }
 
-            // ? Update existing entries or add new ones
-            newEntries.forEach(entry => {
-                const existingEntry = Array.from(this.attendanceToday).find(e => e.label === entry.label);
-                if (existingEntry) {
-                    // ? Update existing entry
-                    existingEntry.timestamp = entry.timestamp;
-                    existingEntry.poses = entry.poses;
-                    existingEntry.attentiveness = entry.attentiveness;
-                    existingEntry.detections = entry.detections;
-                } else {
-                    // ? Add new entry
-                    this.attendanceToday.add(entry);
-                }
-            });
-
-            this.count.innerText = "Detected: " + this.attendanceToday.size;
-            this.updateAttendanceTable();
-
-            requestAnimationFrame(() => this.detectFacesAndPose());
+            // Continue detecting continuously if still active
+            if (this.isDetecting) {
+                this.detectionFrameId = requestAnimationFrame(() => this.detectFacesAndPose());
+            }
 
         } catch (error) {
             console.warn("Error during face detection:", error);
         }
     }
+
+
 
     saveToExcel(attendanceSet) {
         const data = Array.from(attendanceSet).map(entry => ({
