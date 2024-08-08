@@ -1,6 +1,4 @@
-import FaceRecoHandler from './modules/FaceDetectionManager.js';
-
-// const FaceRecoHandler = new Worker('./modules/FaceDetectionManager.js');
+import FaceRecoHandler from './modules/submodules/FaceDetectionManager.js';
 
 // Entry point
 const videoElement = document.getElementById("video");
