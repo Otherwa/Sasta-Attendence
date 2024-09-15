@@ -1,30 +1,11 @@
-// ?  ! Original (O.G) File
-
-// ?   ? Static variable to track attendance status
 import PoseDetector from './PoseNetManager.js';
 
-/**
- * *https://justadudewhohacks.github.io/face-api.js/docs/globals.html 
- * */
-
-// ?  Display the progress bar initially
+// Display the progress bar initially
 const progressBar = document.getElementById("myProgressBar");
 progressBar.style.width = "0%";
 progressBar.style.transition = "width 1s ease";
 
-
 class FaceRecognition {
-
-    /**
-     * FaceRecognition class handles face detection and attendance management based on the provided video stream.
-     * 
-     * @param {HTMLElement} video - The HTML video element where the video stream is displayed.
-     * @param {Set} attendanceToday - The set containing the attendance records for the current session.
-     * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
-     * @param {number} count - The count of attendees for the current session.
-    */
-
-
     constructor(video, attendanceToday, tableBody, count) {
         this.video = video;
         this.attendanceToday = attendanceToday;
@@ -38,23 +19,17 @@ class FaceRecognition {
         this.detectionInterval = 60000; // 60 seconds default
         this.detectionLimit = 5; // Default detection limit
         this.initialize();
-
-        // ?  * PoseNetHandler
     }
-
-
 
     async initialize() {
         await this.startWebcam();
-        progressBar.style.width = "25%";
+        updateProgressBar(25);
         await this.initializeFaceAPI();
-        progressBar.style.width = "50%";
+        updateProgressBar(50);
         await this.createCanvasFromMedia();
-        progressBar.style.width = "65%";
+        updateProgressBar(65);
         await this.initializePoseNet();
-
-        progressBar.style.width = "75%";
-
+        updateProgressBar(75);
 
         // Get user inputs for detection interval and limit
         const intervalInput = document.getElementById('detection-interval');
@@ -73,22 +48,23 @@ class FaceRecognition {
         intervalInput.addEventListener('input', (event) => {
             this.detectionInterval = parseInt(event.target.value, 10);
             intervalValue.innerText = this.detectionInterval;
+            clearCanvas();
             this.restartDetectionLoop(); // Restart the loop with the new interval
         });
 
         // Listen for changes to the limit input
         limitInput.addEventListener('input', (event) => {
             this.detectionLimit = parseInt(event.target.value, 10);
+            clearCanvas();
             limitValue.innerText = this.detectionLimit;
         });
 
         // Start the detection loop
         this.startDetectionLoop();
 
-        progressBar.style.width = "100%";
+        updateProgressBar(100);
         await this.Running();
     }
-
 
     startDetectionLoop() {
         this.isDetecting = true; // Set flag to true
@@ -113,27 +89,18 @@ class FaceRecognition {
         window.alert("Face-Api Up and Running");
     }
 
-    /**
-     * * Creates a canvas elements from the provided video stream and appends it to the document.
-     */
     createCanvasFromMedia = async () => {
-        // ?  * for face reco
         this.canvas_face = faceapi.createCanvasFromMedia(this.video);
         this.canvas_face.id = "video-rec";
         document.getElementById('video-frame').append(this.canvas_face);
         faceapi.matchDimensions(this.canvas_face, { width: this.video.width, height: this.video.height });
 
-        // ?  * for face reco
         this.canvas_pose = faceapi.createCanvasFromMedia(this.video);
         this.canvas_pose.id = "video-pose";
-        // this.canvas_pose.style = "left: 95px;";
         document.getElementById('video-frame').append(this.canvas_pose);
         faceapi.matchDimensions(this.canvas_pose, { width: this.video.width, height: this.video.height });
     }
 
-    /**
-    * * Initializes the webcam and starts streaming video to the provided video element.
-    */
     startWebcam = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -143,21 +110,13 @@ class FaceRecognition {
         }
     }
 
-    /**
-    * * Initializes the PoseNet from ml5.js
-    */
     async initializePoseNet() {
         this.Posenet = new PoseDetector(this.video, this.canvas_pose);
         await this.Posenet.setup();
     }
 
-    /**
-    * * Initializes the FaceAPI models required for face recognition.
-    */
     async initializeFaceAPI() {
         try {
-
-
             await Promise.all([
                 faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
                 faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
@@ -167,38 +126,24 @@ class FaceRecognition {
 
             const labeledFaceDescriptors = await this.getLabeledFaceDescriptions();
             this.faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors);
-
-
         } catch (error) {
             console.error("Error loading faceapi models:", error);
         }
     }
-
-
-    /**
-    * * Retrieves labeled face descriptors from the provided manifest file.
-    * * @returns {Promise<faceapi.LabeledFaceDescriptors[]>} A promise that resolves to an array of labeled face descriptors.
-    */
 
     async getLabeledFaceDescriptions() {
         try {
             let labeledFaceDescriptorsFromLocalStorage = localStorage.getItem('labeledFaceDescriptors');
 
             if (labeledFaceDescriptorsFromLocalStorage) {
-                // ?  Deserialize the data from localStorage
                 const parsedData = JSON.parse(labeledFaceDescriptorsFromLocalStorage);
-
-                // ?  Convert each index value to LabeledFaceDescriptors object
                 const labeledFaceDescriptors = parsedData.map(item => {
-                    // ?  ? Caching
                     const descriptors = item._descriptors.map(descriptor => {
                         const values = Object.values(descriptor);
                         return new Float32Array(values);
                     });
                     return new faceapi.LabeledFaceDescriptors(item._label, descriptors);
                 });
-
-                console.log(labeledFaceDescriptors);
 
                 return labeledFaceDescriptors;
             } else {
@@ -213,11 +158,9 @@ class FaceRecognition {
                     })
                 );
 
-                // ?  Serialize and save the data to localStorage
                 const serializedData = JSON.stringify(labeledFaceDescriptors);
                 localStorage.setItem('labeledFaceDescriptors', serializedData);
 
-                console.log(labeledFaceDescriptors);
                 return labeledFaceDescriptors;
             }
         } catch (error) {
@@ -226,28 +169,13 @@ class FaceRecognition {
         }
     }
 
-
-
-    /**
-    * * Retrieves face descriptors for a given label from the provided image files.
-    * * @param {string} label - The label corresponding to the person's face.
-    * * @returns {Promise<faceapi.Descriptor[]>} A promise that resolves to an array of face descriptors.
-    */
-
     async getFaceDescriptors(labels) {
         const descriptions = [];
-        console.warn(labels);
         try {
-            // Increase the number of images per person
             for (let i = 1; i <= labels[1]; i++) {
-                console.log(`Processing image ${i} for label ${labels[0]}`);
-
-                // ? in index.js Route
                 const imgPath = `./peeps/uploads/${labels[0]}/${i}.jpg`;
                 try {
                     const img = await faceapi.fetchImage(imgPath);
-                    console.log(`Image ${imgPath} loaded successfully`);
-
                     const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 });
                     const detection = await faceapi
                         .detectSingleFace(img, options)
@@ -257,9 +185,6 @@ class FaceRecognition {
 
                     if (detection) {
                         descriptions.push(detection.descriptor);
-                        console.log(`Face descriptor for image ${i} added successfully`);
-                    } else {
-                        console.warn(`No face detected in image ${i} for label ${labels[0]}`);
                     }
                 } catch (error) {
                     console.error(`Error processing image ${imgPath}:`, error);
@@ -271,25 +196,11 @@ class FaceRecognition {
         return descriptions;
     }
 
-
-
-
-    /**
-    * * Saves the attendance records to a JSON file.
-    */
     saveAttendance = () => {
-
-
-        // ?  Call saveToExcel to update the Excel sheet continuously
         this.saveToExcel(this.attendanceToday);
     }
 
-
-    /**
-    * *  Updates the attendance table with the current attendance records.
-    */
     updateAttendanceTable = () => {
-        console.log(this.attendanceToday);
         this.tableBody.innerHTML = "";
 
         Array.from(this.attendanceToday).forEach((entry) => {
@@ -303,7 +214,6 @@ class FaceRecognition {
             removeButton.addEventListener("click", () => {
                 this.attendanceToday.delete(entry);
                 this.updateAttendanceTable();
-                console.log("Attendance today:", Array.from(this.attendanceToday));
             });
 
             actionCell.appendChild(removeButton);
@@ -314,74 +224,74 @@ class FaceRecognition {
         });
     }
 
-
-    /**
-     * * Analyzes the attentiveness of detected faces based on facial expressions, pose data, head orientation, eye openness, and mouth status.
-     * * Updates the attendance records with attentiveness status.
-     */
     analyzeAttentiveness = async (detection, poses) => {
         let isAttentive = false;
+        let attentivenessScore = 0;
 
-        // ?  Analyze face expressions
+        const confidenceThreshold = 0.5;
+
         if (detection.expressions) {
             const expressions = detection.expressions;
-            console.log("EXPRESSIONS")
-            console.log(expressions)
-            const attentiveExpression = expressions.neutral || expressions.happy || 0;
-
+            const attentiveExpression = expressions.neutral > 0.6 || expressions.happy > 0.5;
+            if (attentiveExpression) attentivenessScore += 1;
         }
 
-        // ?  Analyze head orientation
-        const landmarks = detection.landmarks;
+        const landmarks = detection.landmarks?.positions;
         if (landmarks) {
-            const nose = landmarks.getNose();
-            const leftEye = landmarks.getLeftEye();
-            const rightEye = landmarks.getRightEye();
-            console.log("NOSE")
-            console.log(nose);
-            console.log("LEFTEYE")
-            console.log(leftEye);
-            console.log("RIGHTEYE")
-            console.log(rightEye);
+            const nose = landmarks[30];
+            const leftEye = landmarks[36];
+            const rightEye = landmarks[45];
 
+            if (nose && leftEye && rightEye) {
+                const noseX = nose.x;
+                const eyesMidX = (leftEye.x + rightEye.x) / 2;
+                const headOrientationThreshold = 15;
+                const headOrientation = Math.abs(noseX - eyesMidX);
+
+                if (headOrientation < headOrientationThreshold) {
+                    attentivenessScore += 1;
+                }
+            }
         }
 
-        // ?  Analyze eye openness
+        if (poses && poses[0]?.keypoints) {
+            const keypoints = poses[0].keypoints;
+            const leftWrist = keypoints.find(point => point.name === "left_wrist" && point.confidence > confidenceThreshold);
+            const rightWrist = keypoints.find(point => point.name === "right_wrist" && point.confidence > confidenceThreshold);
+            const nose = keypoints.find(point => point.name === "nose" && point.confidence > confidenceThreshold);
+
+            if (leftWrist && rightWrist && nose) {
+                const leftWristToNoseDist = Math.hypot(leftWrist.x - nose.x, leftWrist.y - nose.y);
+                const rightWristToNoseDist = Math.hypot(rightWrist.x - nose.x, rightWrist.y - nose.y);
+
+                const handNearFaceThreshold = 100;
+
+                if (leftWristToNoseDist < handNearFaceThreshold && rightWristToNoseDist < handNearFaceThreshold) {
+                    attentivenessScore += 1;
+                }
+            }
+        }
+
         if (landmarks) {
-            const leftEyeOpenness = landmarks.getLeftEyeBrow().reduce((acc, point) => acc + point.y, 0) / landmarks.getLeftEyeBrow().length;
-            const rightEyeOpenness = landmarks.getRightEyeBrow().reduce((acc, point) => acc + point.y, 0) / landmarks.getRightEyeBrow().length;
-            const eyeOpennessThreshold = 0.2;
-            console.log("LEFTEYEOPENESS");
-            console.log(leftEyeOpenness);
-            console.log("RIGHTEYEOPENESS");
-            console.log(rightEyeOpenness);
+            const mouth = landmarks.slice(48, 60);
+            if (mouth.length === 12) {
+                const mouthOpenness = mouth[9].y - mouth[3].y;
+                const mouthOpennessThreshold = 0.3;
 
+                if (mouthOpenness < mouthOpennessThreshold) {
+                    attentivenessScore += 1;
+                }
+            }
         }
 
-        // ?  Analyze mouth status
-        if (landmarks) {
-            const mouth = landmarks.getMouth();
-            const mouthOpenness = mouth[6].y - mouth[2].y; // ?  Adjust the points as needed
-            const mouthOpennessThreshold = 0.3; // ?  Adjust this threshold as needed
-            console.log("MOUTH");
-            console.log(mouth);
-            console.log("MOUTHOPENESS");
-            console.log(mouthOpenness);
-
-        }
+        isAttentive = attentivenessScore >= 2;
 
         return isAttentive;
-    }
+    };
 
-
-    /**
-    * * Detects faces in the video stream and updates the attendance records accordingly.
-    */
     async detectFacesAndPose() {
         try {
             const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 });
-
-            // Detect faces and get pose data
             const detections = await faceapi.detectAllFaces(this.video, options)
                 .withFaceLandmarks()
                 .withFaceDescriptors()
@@ -394,73 +304,65 @@ class FaceRecognition {
             const newEntries = [];
             const currentTime = new Date().getTime();
 
-            // Check if enough time has passed since the last update
             if (currentTime - this.lastUpdate >= this.detectionInterval) {
                 for (const detection of resizedDetections) {
                     const box = detection.detection.box;
                     const match = await this.faceMatcher.findBestMatch(detection.descriptor);
-                    const label = match && match.label !== "unknown" ? match : "unknown";
+                    const label = match && match.label !== "unknown" ? match.label : "unknown";
 
-                    console.log(match);
+                    const poses = await this.Posenet.draw();
 
-                    const drawBox = new faceapi.draw.DrawBox(box, { label });
+                    const isAttentive = await this.analyzeAttentiveness(detection, poses);
+                    const attentivenessStatus = isAttentive ? "Attentive" : "Not Attentive";
+
+                    const labelWithStatus = label !== "unknown" ? `${label} (${attentivenessStatus})` : "unknown";
+
+                    const drawBox = new faceapi.draw.DrawBox(box, { label: labelWithStatus });
                     drawBox.draw(this.canvas_face);
 
                     faceapi.draw.drawFaceExpressions(this.canvas_face, [detection]);
                     faceapi.draw.drawFaceLandmarks(this.canvas_face, [detection.landmarks]);
 
-                    const poses = await this.Posenet.draw();
-                    const isAttentive = await this.analyzeAttentiveness(detection, poses);
+                    const requiredDetection = {
+                        expressions: detection.expressions,
+                        landmarks: detection.landmarks.positions,
+                        descriptor: detection.descriptor,
+                    };
 
-                    let entry = Array.from(this.attendanceToday).find((e) => e.label === label.toString().split(' (')[0]);
+                    let entry = Array.from(this.attendanceToday).find((e) => e.label === label);
 
                     if (entry) {
                         entry.timestamp = new Date().toISOString();
-                        entry.poses = poses;
-                        entry.attentiveness = isAttentive ? "Attentive" : "Not Attentive";
-
-                        // Add the new detection and keep only the last 5
-                        entry.detections.push([detection, new Date().toISOString()]);
-                        if (entry.detections.length > this.detectionLimit) {
-                            entry.detections.shift();
-                        }
+                        entry.attentiveness = attentivenessStatus;
+                        entry.detections.push([requiredDetection, new Date().toISOString()]);
+                        if (entry.detections.length > this.detectionLimit) entry.detections.shift();
                     } else {
                         entry = {
-                            label: label.toString().split(' (')[0],
-                            poses: poses,
-                            detections: [[detection, new Date().toISOString()]],  // Start with the current detection
-                            attentiveness: isAttentive ? "Attentive" : "Not Attentive",
+                            label: label,
+                            attentiveness: attentivenessStatus,
                             timestamp: new Date().toISOString(),
+                            detections: [[requiredDetection, new Date().toISOString()]],
                         };
-                        if (entry.label !== "unknown") {
-                            newEntries.push(entry);
-                        }
+                        if (entry.label !== "unknown") newEntries.push(entry);
                     }
                 }
 
-                // Update existing entries or add new ones
                 newEntries.forEach(entry => {
                     const existingEntry = Array.from(this.attendanceToday).find(e => e.label === entry.label);
                     if (existingEntry) {
-                        // Update existing entry
                         existingEntry.timestamp = entry.timestamp;
-                        existingEntry.poses = entry.poses;
                         existingEntry.attentiveness = entry.attentiveness;
                         existingEntry.detections = entry.detections;
                     } else {
-                        // Add new entry
                         this.attendanceToday.add(entry);
                     }
                 });
 
                 this.count.innerText = "Detected: " + this.attendanceToday.size;
                 this.updateAttendanceTable();
-
-                // Update the last update time
                 this.lastUpdate = currentTime;
             }
 
-            // Continue detecting continuously if still active
             if (this.isDetecting) {
                 this.detectionFrameId = requestAnimationFrame(() => this.detectFacesAndPose());
             }
@@ -469,8 +371,6 @@ class FaceRecognition {
             console.warn("Error during face detection:", error);
         }
     }
-
-
 
     saveToExcel(attendanceSet) {
         const data = Array.from(attendanceSet).map(entry => ({
@@ -484,12 +384,9 @@ class FaceRecognition {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Attendance");
 
-
-        // ?  Create a blob from the workbook
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
         const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
 
-        // ?  Create a link element to download the blob
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "attendance.xlsx";
@@ -498,8 +395,6 @@ class FaceRecognition {
         document.body.removeChild(link);
     }
 }
-
-
 
 function s2ab(s) {
     const buf = new ArrayBuffer(s.length);
@@ -510,21 +405,17 @@ function s2ab(s) {
     return buf;
 }
 
+function updateProgressBar(percentage) {
+    progressBar.style.width = `${percentage}%`;
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('video-rec');
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 export default class FaceRecoHandler {
-    /**
-   * FaceRecoHandler class manages the attendance system for a video stream with face recognition.
-   * It provides functionality to start, stop, and save attendance, as well as update the attendance table.
-   * 
-   * @param {HTMLElement} videoElement - The HTML video element where the video stream is displayed.
-   * @param {HTMLElement} startBtn - The button element used to start attendance tracking.
-   * @param {HTMLElement} stopBtn - The button element used to stop attendance tracking.
-   * @param {HTMLElement} saveBtn - The button element used to save attendance to a file.
-   * @param {HTMLElement} tableBody - The tbody element of the table where attendance data will be displayed.
-   * @param {HTMLElement} status - The element displaying the current status of attendance (e.g., Active/Inactive).
-   * @param {number} count - The count of attendees for the current session.
-   */
-
-
     constructor(videoElement, saveBtn, tableBody, status, count) {
         this.video = videoElement;
         this.saveBtn = saveBtn;
@@ -532,7 +423,6 @@ export default class FaceRecoHandler {
         this.status = status;
         this.count = count;
         this.attendanceToday = new Set();
-
 
         this.saveBtn.addEventListener("click", () => this.saveAttendance());
 
@@ -543,5 +433,3 @@ export default class FaceRecoHandler {
         this.faceRecognition.saveAttendance();
     }
 }
-
-
